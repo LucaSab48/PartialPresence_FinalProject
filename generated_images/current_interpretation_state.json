@@ -1,0 +1,105 @@
+{
+  "updated_at": "2026-03-25T17:18:04",
+  "timing": {
+    "text_update_interval_seconds": 2,
+    "image_generation_interval_seconds": 10,
+    "state_stable_hold_seconds": 3
+  },
+  "raw_frame_summary": {
+    "frame_count": 6,
+    "latest_seq": 424
+  },
+  "smoothed_sensor_values": {
+    "frame_count": 6,
+    "seq_range": [
+      419,
+      424
+    ],
+    "uptime_ms": 868117,
+    "bme688": {
+      "temperature_c": 21.61,
+      "raw_temperature_c": 23.61,
+      "humidity_pct": 18.733333333333334,
+      "pressure_hpa": 1018.3666666666667,
+      "gas_ohms": 12917167.0
+    },
+    "light": {
+      "raw": 18785.333333333332,
+      "percent": 71.33333333333333
+    },
+    "ld2410c": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 115.33333333333333,
+      "moving_energy": 84.0,
+      "stationary_distance_cm": 142.5,
+      "stationary_energy": 100.0,
+      "detection_distance_cm": 97.83333333333333,
+      "status": null,
+      "state_history": [
+        "MOVING_AND_STATIONARY",
+        "MOVING_AND_STATIONARY",
+        "MOVING_AND_STATIONARY",
+        "MOVING_AND_STATIONARY",
+        "MOVING_AND_STATIONARY",
+        "MOVING_AND_STATIONARY"
+      ]
+    },
+    "sen0628": {
+      "center_mm": 1543.5,
+      "min_mm": 212.83333333333334,
+      "max_mm": 1364.5,
+      "mean_mm": 346.83,
+      "valid_points": 34.0,
+      "left_zone_mm": 708.6033333333334,
+      "center_zone_mm": 322.33666666666664,
+      "right_zone_mm": 352.1016666666667,
+      "left_close_points": 3.1666666666666665,
+      "center_close_points": 18.5,
+      "right_close_points": 12.0,
+      "near_points": 33.666666666666664,
+      "mid_points": 0.16666666666666666,
+      "far_points": 0.16666666666666666
+    },
+    "errors": {
+      "bme688_error": null,
+      "sen0628_error": null
+    }
+  },
+  "interpreted_state": {
+    "presence_activity": "active presence",
+    "presence_count": "two people",
+    "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, close to the sensor plane",
+    "sen0628_figure_side": "middle",
+    "presence_location": "in the near field, spread across the full field of view",
+    "lighting_condition": "bright",
+    "atmospheric_condition": "neutral indoor air",
+    "spatial_impression": "shallow and fragmented",
+    "abstract_background": "abstract interior backdrop interpreted from sensor data, washed pale planes with generous openness and faint bloom, soft neutral texture barely present in the background, desaturated tones, muted color, large open areas"
+  },
+  "live_inference_lines": [
+    "current readings suggest activity near the sensor field",
+    "SEN0628 spatial reading: SEN0628 suggests occupancy spread across the room, close to the sensor plane",
+    "figure side estimate: middle",
+    "position estimate: in the near field, spread across the full field of view",
+    "lighting appears bright",
+    "air conditions seem neutral",
+    "spatial impression: shallow and fragmented"
+  ],
+  "image_prompt": "a believable interior room shaped by sensed human activity, two people, in the near field, spread across the full field of view, the room feels shallow and fragmented, lighting reads as bright, air feels like neutral indoor air, architectural backdrop remains minimal and ambiguous, abstract interior backdrop interpreted from sensor data, washed pale planes with generous openness and faint bloom, soft neutral texture barely present in the background, desaturated tones, muted color, large open areas, background inspired by liminal void imagery, vast dark backdrop, sparse floor plane, muted low-saturation gradients, faint atmospheric haze, smooth abstract curved forms, minimal detail, quiet composition with generous open areas and strong figure readability, the room must visibly contain human occupants, photorealistic interior surfaces, plausible materials, abstract but physically believable space, active presence, two people, in the near field, spread across the full field of view, SEN0628 suggests occupancy spread across the room, close to the sensor plane, SEN0628 places the figure on the middle side of the room, LD2410C detects a target in the room, so there is a human figure in the image and it must not be an empty room, the figure must be clearly visible and immediately readable as a person, LD2410C should determine whether one or two people are shown, SEN0628 should determine where those people stand within the room, make the people clearly readable as occupants rather than implied traces, human presence can appear only as the inferred number of coherent scene elements, not repeated beyond that count, at least one full human figure must be visible in the final image, single interior scene, cinematic photography, photorealistic image, the room should visibly contain the detected occupants, keep the background secondary so the people remain legible, realistic human scale, natural posture, clear separation between each person, medium-long shot, full or three-quarter bodies visible, subjects not cropped out, human figures should be immediately noticeable at first glance, fine surface detail, restrained background detail, avoid ambiguous forms when people are present, strong figure readability, people placed against large open background areas only when targets are detected, background palette should stay muted and desaturated, with charcoal, dusty blue, faded teal, ash gray, and faint dusty rose, real-world lighting, natural shadows, subtle atmospheric depth, realistic lens perspective, dreamlike only in interpretation, not in rendering style, avoid painterly, graphic, or overtly surreal aesthetics, no text, no words, no letters, no signage, no typography, no collage, no diptych, no triptych, no split panels, no storyboard, no poster layout, no watermark, no caption, no user interface, no document look, no empty room, no empty scene, no furniture-only composition, no hidden person, no cropped-out person, no tiny distant person, no obscured face, no silhouette-only figure",
+  "state_signature": "{\"atmospheric_condition\": \"neutral indoor air\", \"lighting_condition\": \"bright\", \"presence_activity\": \"active presence\", \"presence_count\": \"two people\", \"presence_location\": \"in the near field, spread across the full field of view\", \"sen0628_figure_side\": \"middle\", \"sen0628_spatial_estimate\": \"SEN0628 suggests occupancy spread across the room, close to the sensor plane\", \"spatial_impression\": \"shallow and fragmented\"}",
+  "stable_signature": "{\"atmospheric_condition\": \"neutral indoor air\", \"lighting_condition\": \"bright\", \"presence_activity\": \"active presence\", \"presence_count\": \"two people\", \"presence_location\": \"in the near field, spread across the full field of view\", \"sen0628_figure_side\": \"middle\", \"sen0628_spatial_estimate\": \"SEN0628 suggests occupancy spread across the room, close to the sensor plane\", \"spatial_impression\": \"shallow and fragmented\"}",
+  "last_meaningful_change_time": 1774473481.559156,
+  "last_text_update_time": 1774473484.5661228,
+  "last_image_generation_time": 1774473476.5011876,
+  "current_image_path": "C:\\Users\\lucas\\Documents\\IMCA322\\Prototype1\\generated_images\\sensor_inference_20260325_171759.png",
+  "last_image_error": null,
+  "seconds_since_meaningful_change": 3.01,
+  "change_metrics": {
+    "light_percent": 71.33333333333333,
+    "temperature_c": 21.61,
+    "humidity_pct": 18.733333333333334,
+    "detection_distance_cm": 97.83333333333333
+  }
+}

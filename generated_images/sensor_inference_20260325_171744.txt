@@ -1,0 +1,345 @@
+generation_timestamp: 2026-03-25T17:17:44
+
+raw_sensor_frames:
+[
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 75,
+      "stationary_energy": 100,
+      "detection_distance_cm": 77,
+      "moving_energy": 100,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 3,
+      "stationary_distance_cm": 96,
+      "target_state": "MOVING_AND_STATIONARY"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 18.77,
+      "temperature_c": 21.63,
+      "pressure_hpa": 1018.43,
+      "raw_temperature_c": 23.63
+    },
+    "light": {
+      "percent": 73.7,
+      "raw": 17220
+    },
+    "uptime_ms": 835818,
+    "type": "sensor_frame",
+    "seq": 408,
+    "sen0628": {
+      "max_mm": 3259,
+      "mean_mm": 788.03,
+      "center_close_points": 12,
+      "center_mm": 4000,
+      "right_close_points": 12,
+      "valid_points": 32,
+      "min_mm": 400,
+      "right_zone_mm": 835.0,
+      "left_zone_mm": 990.14,
+      "near_points": 30,
+      "far_points": 2,
+      "mid_points": 0,
+      "center_zone_mm": 635.85,
+      "left_close_points": 6
+    }
+  },
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 93,
+      "stationary_energy": 100,
+      "detection_distance_cm": 127,
+      "moving_energy": 93,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 416,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 18.76,
+      "temperature_c": 21.64,
+      "pressure_hpa": 1018.37,
+      "raw_temperature_c": 23.64
+    },
+    "light": {
+      "percent": 74.1,
+      "raw": 16996
+    },
+    "uptime_ms": 837818,
+    "type": "sensor_frame",
+    "seq": 409,
+    "sen0628": {
+      "max_mm": 2139,
+      "mean_mm": 659.44,
+      "center_close_points": 15,
+      "center_mm": 4000,
+      "right_close_points": 6,
+      "valid_points": 27,
+      "min_mm": 408,
+      "right_zone_mm": 815.0,
+      "left_zone_mm": 781.17,
+      "near_points": 26,
+      "far_points": 0,
+      "mid_points": 1,
+      "center_zone_mm": 548.53,
+      "left_close_points": 5
+    }
+  },
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 102,
+      "stationary_energy": 100,
+      "detection_distance_cm": 93,
+      "moving_energy": 64,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 3,
+      "stationary_distance_cm": 135,
+      "target_state": "MOVING_AND_STATIONARY"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 18.77,
+      "temperature_c": 21.63,
+      "pressure_hpa": 1018.41,
+      "raw_temperature_c": 23.63
+    },
+    "light": {
+      "percent": 74.1,
+      "raw": 16948
+    },
+    "uptime_ms": 839818,
+    "type": "sensor_frame",
+    "seq": 410,
+    "sen0628": {
+      "max_mm": 2464,
+      "mean_mm": 394.92,
+      "center_close_points": 20,
+      "center_mm": 393,
+      "right_close_points": 8,
+      "valid_points": 38,
+      "min_mm": 109,
+      "right_zone_mm": 677.0,
+      "left_zone_mm": 265.12,
+      "near_points": 36,
+      "far_points": 1,
+      "mid_points": 1,
+      "center_zone_mm": 305.8,
+      "left_close_points": 8
+    }
+  },
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 111,
+      "stationary_energy": 100,
+      "detection_distance_cm": 96,
+      "moving_energy": 100,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 3,
+      "stationary_distance_cm": 79,
+      "target_state": "MOVING_AND_STATIONARY"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 18.77,
+      "temperature_c": 21.64,
+      "pressure_hpa": 1018.28,
+      "raw_temperature_c": 23.64
+    },
+    "light": {
+      "percent": 74.1,
+      "raw": 16948
+    },
+    "uptime_ms": 841818,
+    "type": "sensor_frame",
+    "seq": 411,
+    "sen0628": {
+      "max_mm": 2382,
+      "mean_mm": 619.29,
+      "center_close_points": 15,
+      "center_mm": 4000,
+      "right_close_points": 8,
+      "valid_points": 31,
+      "min_mm": 290,
+      "right_zone_mm": 583.22,
+      "left_zone_mm": 940.5,
+      "near_points": 28,
+      "far_points": 2,
+      "mid_points": 1,
+      "center_zone_mm": 519.12,
+      "left_close_points": 5
+    }
+  },
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 83,
+      "stationary_energy": 100,
+      "detection_distance_cm": 118,
+      "moving_energy": 100,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 238,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 18.77,
+      "temperature_c": 21.64,
+      "pressure_hpa": 1018.41,
+      "raw_temperature_c": 23.64
+    },
+    "light": {
+      "percent": 72.4,
+      "raw": 18084
+    },
+    "uptime_ms": 843862,
+    "type": "sensor_frame",
+    "seq": 412,
+    "sen0628": {
+      "max_mm": 2104,
+      "mean_mm": 465.4,
+      "center_close_points": 17,
+      "center_mm": 4000,
+      "right_close_points": 7,
+      "valid_points": 30,
+      "min_mm": 296,
+      "right_zone_mm": 580.25,
+      "left_zone_mm": 380.6,
+      "near_points": 29,
+      "far_points": 0,
+      "mid_points": 1,
+      "center_zone_mm": 436.29,
+      "left_close_points": 5
+    }
+  },
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 30,
+      "stationary_energy": 100,
+      "detection_distance_cm": 86,
+      "moving_energy": 100,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 118,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 18.79,
+      "temperature_c": 21.63,
+      "pressure_hpa": 1018.43,
+      "raw_temperature_c": 23.63
+    },
+    "light": {
+      "percent": 72.0,
+      "raw": 18356
+    },
+    "uptime_ms": 845889,
+    "type": "sensor_frame",
+    "seq": 413,
+    "sen0628": {
+      "max_mm": 2035,
+      "mean_mm": 282.89,
+      "center_close_points": 23,
+      "center_mm": 285,
+      "right_close_points": 13,
+      "valid_points": 45,
+      "min_mm": 95,
+      "right_zone_mm": 235.46,
+      "left_zone_mm": 225.12,
+      "near_points": 44,
+      "far_points": 0,
+      "mid_points": 1,
+      "center_zone_mm": 327.83,
+      "left_close_points": 8
+    }
+  }
+]
+
+smoothed_sensor_values:
+{
+  "frame_count": 6,
+  "seq_range": [
+    408,
+    413
+  ],
+  "uptime_ms": 845889,
+  "bme688": {
+    "temperature_c": 21.635,
+    "raw_temperature_c": 23.635,
+    "humidity_pct": 18.771666666666665,
+    "pressure_hpa": 1018.3883333333333,
+    "gas_ohms": 12917167.0
+  },
+  "light": {
+    "raw": 17425.333333333332,
+    "percent": 73.39999999999999
+  },
+  "ld2410c": {
+    "out": 1,
+    "target_state": "MOVING_AND_STATIONARY",
+    "target_state_raw": 3,
+    "moving_distance_cm": 82.33333333333333,
+    "moving_energy": 92.83333333333333,
+    "stationary_distance_cm": 180.33333333333334,
+    "stationary_energy": 100.0,
+    "detection_distance_cm": 99.5,
+    "status": null,
+    "state_history": [
+      "MOVING_AND_STATIONARY",
+      "STATIONARY_TARGET",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET"
+    ]
+  },
+  "sen0628": {
+    "center_mm": 2779.6666666666665,
+    "min_mm": 266.3333333333333,
+    "max_mm": 2397.1666666666665,
+    "mean_mm": 534.995,
+    "valid_points": 33.833333333333336,
+    "left_zone_mm": 597.1083333333333,
+    "center_zone_mm": 462.2366666666667,
+    "right_zone_mm": 620.9883333333333,
+    "left_close_points": 6.166666666666667,
+    "center_close_points": 17.0,
+    "right_close_points": 9.0,
+    "near_points": 32.166666666666664,
+    "mid_points": 0.8333333333333334,
+    "far_points": 0.8333333333333334
+  },
+  "errors": {
+    "bme688_error": null,
+    "sen0628_error": null
+  }
+}
+
+interpreted_descriptors:
+{
+  "presence_activity": "active presence",
+  "presence_count": "two people",
+  "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, close to the sensor plane",
+  "sen0628_figure_side": "middle",
+  "presence_location": "in the near field, spread across the full field of view",
+  "lighting_condition": "bright",
+  "atmospheric_condition": "neutral indoor air",
+  "spatial_impression": "shallow and fragmented",
+  "abstract_background": "abstract interior backdrop interpreted from sensor data, washed pale planes with generous openness and faint bloom, soft neutral texture barely present in the background, desaturated tones, muted color, large open areas"
+}
+
+final_prompt:
+a believable interior room shaped by sensed human activity, two people, in the near field, spread across the full field of view, the room feels shallow and fragmented, lighting reads as bright, air feels like neutral indoor air, architectural backdrop remains minimal and ambiguous, abstract interior backdrop interpreted from sensor data, washed pale planes with generous openness and faint bloom, soft neutral texture barely present in the background, desaturated tones, muted color, large open areas, background inspired by liminal void imagery, vast dark backdrop, sparse floor plane, muted low-saturation gradients, faint atmospheric haze, smooth abstract curved forms, minimal detail, quiet composition with generous open areas and strong figure readability, the room must visibly contain human occupants, photorealistic interior surfaces, plausible materials, abstract but physically believable space, active presence, two people, in the near field, spread across the full field of view, SEN0628 suggests occupancy spread across the room, close to the sensor plane, SEN0628 places the figure on the middle side of the room, LD2410C detects a target in the room, so there is a human figure in the image and it must not be an empty room, the figure must be clearly visible and immediately readable as a person, LD2410C should determine whether one or two people are shown, SEN0628 should determine where those people stand within the room, make the people clearly readable as occupants rather than implied traces, human presence can appear only as the inferred number of coherent scene elements, not repeated beyond that count, at least one full human figure must be visible in the final image, single interior scene, cinematic photography, photorealistic image, the room should visibly contain the detected occupants, keep the background secondary so the people remain legible, realistic human scale, natural posture, clear separation between each person, medium-long shot, full or three-quarter bodies visible, subjects not cropped out, human figures should be immediately noticeable at first glance, fine surface detail, restrained background detail, avoid ambiguous forms when people are present, strong figure readability, people placed against large open background areas only when targets are detected, background palette should stay muted and desaturated, with charcoal, dusty blue, faded teal, ash gray, and faint dusty rose, real-world lighting, natural shadows, subtle atmospheric depth, realistic lens perspective, dreamlike only in interpretation, not in rendering style, avoid painterly, graphic, or overtly surreal aesthetics, no text, no words, no letters, no signage, no typography, no collage, no diptych, no triptych, no split panels, no storyboard, no poster layout, no watermark, no caption, no user interface, no document look, no empty room, no empty scene, no furniture-only composition, no hidden person, no cropped-out person, no tiny distant person, no obscured face, no silhouette-only figure
