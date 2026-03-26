@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import time
+import threading
 from collections import Counter, deque
 from dataclasses import dataclass
 from datetime import datetime
@@ -20,9 +21,9 @@ SERIAL_TIMEOUT_SECONDS = 1
 SERIAL_STARTUP_SECONDS = 20
 
 # Timing controls for the two output layers.
-TEXT_UPDATE_INTERVAL_SECONDS = 2
-IMAGE_GENERATION_INTERVAL_SECONDS = 10
-STATE_STABLE_HOLD_SECONDS = 3
+TEXT_UPDATE_INTERVAL_SECONDS = 1.0
+IMAGE_GENERATION_INTERVAL_SECONDS = 8.0
+STATE_STABLE_HOLD_SECONDS = 1.5
 
 # Thresholds for deciding whether the interpreted state changed enough to matter.
 LIGHT_CHANGE_THRESHOLD = 6.0
@@ -62,6 +63,9 @@ class InterpretationCoordinator:
     last_image_generation_time: float = 0.0
     last_image_signature: str | None = None
     latest_shared_state: dict[str, Any] | None = None
+    image_generation_in_progress: bool = False
+    image_generation_started_at: float = 0.0
+    pending_image_result: dict[str, Any] | None = None
 
 
 def json_text(value: object) -> str:
@@ -517,35 +521,35 @@ def build_live_inference_lines(descriptors):
     sen0628_figure_side = descriptors["sen0628_figure_side"]
 
     movement_line_map = {
-        "no presence": "current readings suggest little or no presence",
-        "still presence": "current readings suggest a steady presence",
-        "active presence": "current readings suggest activity near the sensor field",
-        "intermittent movement": "current readings suggest intermittent activity",
-        "presence uncertain": "presence remains uncertain",
+        "no presence": "possible absence of human presence",
+        "still presence": "steady human presence inferred",
+        "active presence": "clustered activity inferred",
+        "intermittent movement": "intermittent movement inferred",
+        "presence uncertain": "low-confidence presence reading",
     }
     light_line_map = {
-        "dark": "lighting appears low",
-        "dim": "lighting appears dim",
-        "moderate light": "lighting appears moderate",
-        "bright": "lighting appears bright",
-        "lighting uncertain": "lighting remains uncertain",
+        "dark": "ambient light remains low",
+        "dim": "dim ambient field detected",
+        "moderate light": "moderate ambient light detected",
+        "bright": "bright ambient field detected",
+        "lighting uncertain": "ambient light remains uncertain",
     }
     atmosphere_line_map = {
-        "stale heavy atmosphere": "air conditions seem dense and stale",
-        "warm dense air": "air conditions seem warm and enclosed",
-        "cool dry air": "air conditions seem dry and crisp",
-        "neutral indoor air": "air conditions seem neutral",
-        "atmosphere uncertain": "air conditions remain uncertain",
+        "stale heavy atmosphere": "dense indoor atmosphere inferred",
+        "warm dense air": "warm enclosed atmosphere inferred",
+        "cool dry air": "cool dry atmosphere inferred",
+        "neutral indoor air": "neutral indoor atmosphere inferred",
+        "atmosphere uncertain": "atmospheric reading remains uncertain",
     }
 
     lines = [
-        movement_line_map.get(presence_activity, f"current readings suggest {presence_activity}"),
-        f"SEN0628 spatial reading: {sen0628_spatial_estimate}",
-        f"figure side estimate: {sen0628_figure_side}",
-        f"position estimate: {presence_location}",
+        movement_line_map.get(presence_activity, f"{presence_activity} inferred"),
+        f"spatial trace: {sen0628_spatial_estimate}",
+        f"lateral bias: {sen0628_figure_side}",
+        f"spatial boundary: {presence_location}",
         light_line_map.get(lighting, f"lighting appears {lighting}"),
-        atmosphere_line_map.get(atmosphere, f"air conditions seem {atmosphere}"),
-        f"spatial impression: {spatial}",
+        atmosphere_line_map.get(atmosphere, f"atmosphere appears {atmosphere}"),
+        f"room impression: {spatial}",
     ]
     return lines
 
@@ -823,6 +827,8 @@ def should_update_text(coordinator, now, state_changed):
 def should_generate_new_image(coordinator, now):
     if coordinator.latest_shared_state is None:
         return False
+    if coordinator.image_generation_in_progress:
+        return False
     if now - coordinator.last_image_generation_time < IMAGE_GENERATION_INTERVAL_SECONDS:
         return False
     if now - coordinator.last_meaningful_change_time < STATE_STABLE_HOLD_SECONDS:
@@ -858,6 +864,70 @@ def generate_and_save_image(client, shared_state: dict[str, Any], raw_frames):
     return image_path
 
 
+def start_image_generation(
+    client,
+    coordinator: InterpretationCoordinator,
+    shared_state: dict[str, Any],
+    raw_frames: list[dict[str, Any]],
+    now: float,
+) -> None:
+    shared_state_snapshot = json.loads(json.dumps(shared_state))
+    raw_frames_snapshot = json.loads(json.dumps(raw_frames))
+    signature = coordinator.stable_signature
+
+    coordinator.image_generation_in_progress = True
+    coordinator.image_generation_started_at = now
+    coordinator.last_image_generation_time = now
+    coordinator.pending_image_result = None
+
+    def worker() -> None:
+        try:
+            image_path = generate_and_save_image(client, shared_state_snapshot, raw_frames_snapshot)
+            coordinator.pending_image_result = {
+                "signature": signature,
+                "image_path": str(image_path.resolve()),
+                "error": None,
+                "completed_at": time.time(),
+            }
+        except Exception as exc:
+            coordinator.pending_image_result = {
+                "signature": signature,
+                "image_path": None,
+                "error": str(exc),
+                "completed_at": time.time(),
+            }
+
+    threading.Thread(target=worker, daemon=True).start()
+
+
+def finalize_pending_image_result(coordinator: InterpretationCoordinator) -> None:
+    result = coordinator.pending_image_result
+    if result is None:
+        return
+
+    coordinator.pending_image_result = None
+    coordinator.image_generation_in_progress = False
+    coordinator.last_image_generation_time = result["completed_at"]
+
+    latest_shared_state = coordinator.latest_shared_state
+    if latest_shared_state is None:
+        return
+
+    latest_shared_state["last_image_generation_time"] = coordinator.last_image_generation_time
+    latest_shared_state["image_generation_in_progress"] = False
+
+    if result["error"] is None:
+        coordinator.last_image_signature = result["signature"]
+        latest_shared_state["current_image_path"] = result["image_path"]
+        latest_shared_state["last_image_error"] = None
+        print(f"[IMAGE] Updated image for signature: {result['signature']}")
+    else:
+        latest_shared_state["last_image_error"] = result["error"]
+        print(f"[ERROR] Image generation failed: {result['error']}", file=sys.stderr)
+
+    update_shared_state_file(latest_shared_state)
+
+
 def process_interpretation_cycle(
     coordinator: InterpretationCoordinator, frame_buffer, now: float
 ) -> tuple[list[dict[str, Any]], dict[str, Any], bool]:
@@ -878,6 +948,9 @@ def process_interpretation_cycle(
         coordinator.current_signature = signature
         coordinator.stable_signature = signature
         coordinator.last_meaningful_change_time = now
+    elif coordinator.current_signature is None:
+        coordinator.current_signature = signature
+        coordinator.stable_signature = signature
 
     shared_state = build_shared_state_payload(
         raw_frames=raw_frames,
@@ -892,6 +965,7 @@ def process_interpretation_cycle(
         ),
     )
     shared_state["change_metrics"] = change_metrics
+    shared_state["image_generation_in_progress"] = coordinator.image_generation_in_progress
     coordinator.latest_shared_state = shared_state
     return raw_frames, shared_state, state_changed
 
@@ -944,6 +1018,7 @@ def main():
                     continue
 
                 now = time.time()
+                finalize_pending_image_result(coordinator)
                 raw_frames, shared_state, state_changed = process_interpretation_cycle(
                     coordinator, frame_buffer, now
                 )
@@ -955,28 +1030,13 @@ def main():
                     print(f"[TEXT] {' | '.join(shared_state['live_inference_lines'])}")
 
                 if should_generate_new_image(coordinator, now):
-                    try:
-                        image_path = generate_and_save_image(client, shared_state, raw_frames)
-                        coordinator.last_image_generation_time = now
-                        coordinator.last_image_signature = coordinator.stable_signature
-                        latest_shared_state = coordinator.latest_shared_state
-                        if latest_shared_state is not None:
-                            latest_shared_state["current_image_path"] = str(image_path.resolve())
-                            latest_shared_state["last_image_generation_time"] = (
-                                coordinator.last_image_generation_time
-                            )
-                            latest_shared_state["last_image_error"] = None
-                            update_shared_state_file(latest_shared_state)
-                    except Exception as exc:
-                        coordinator.last_image_generation_time = now
-                        latest_shared_state = coordinator.latest_shared_state
-                        if latest_shared_state is not None:
-                            latest_shared_state["last_image_generation_time"] = (
-                                coordinator.last_image_generation_time
-                            )
-                            latest_shared_state["last_image_error"] = str(exc)
-                            update_shared_state_file(latest_shared_state)
-                        print(f"[ERROR] Image generation failed: {exc}", file=sys.stderr)
+                    latest_shared_state = coordinator.latest_shared_state
+                    if latest_shared_state is not None:
+                        latest_shared_state["image_generation_in_progress"] = True
+                        latest_shared_state["last_image_error"] = None
+                        update_shared_state_file(latest_shared_state)
+                    print("[IMAGE] Starting background image generation")
+                    start_image_generation(client, coordinator, shared_state, raw_frames, now)
     except serial.SerialException as exc:
         print(f"Could not open {PORT}: {exc}", file=sys.stderr)
         print(

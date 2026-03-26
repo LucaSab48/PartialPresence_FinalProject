@@ -1,4 +1,4 @@
-"""Display the newest generated image fullscreen with a live inference text overlay."""
+"""Display the newest generated image fullscreen with a separate live inference panel."""
 
 import json
 import sys
@@ -13,22 +13,25 @@ STATE_FILE = IMAGE_FOLDER / "current_interpretation_state.json"
 SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 POLL_INTERVAL_MS = 700
 
-# Overlay controls for quick iteration during prototyping.
-SHOW_OVERLAY_TITLE = True
-OVERLAY_TITLE = "LIVE INFERENCE"
-OVERLAY_FONT_SIZE = 18
-OVERLAY_TITLE_SIZE = 16
-OVERLAY_LINE_SPACING = 12
-OVERLAY_MARGIN_X = 70
-OVERLAY_MARGIN_Y = 70
-OVERLAY_POSITION = "bottom_left"  # top_left, top_right, bottom_left, bottom_right
-OVERLAY_TEXT_COLOR = "#f2f2f2"
-OVERLAY_TITLE_COLOR = "#b8b8b8"
-OVERLAY_BOX_FILL = "#050505"
-OVERLAY_BOX_ALPHA = 10
-OVERLAY_BOX_PADDING_X = 24
-OVERLAY_BOX_PADDING_Y = 18
-MAX_TEXT_LINES = 5
+# Layout controls for projector-friendly presentation.
+LAYOUT_MODE = "stacked"  # stacked or side_panel
+PANEL_TITLE = "LIVE INFERENCE"
+BODY_FONT_SIZE = 30
+TITLE_FONT_SIZE = 20
+LINE_SPACING = 18
+SCREEN_MARGIN = 48
+CONTENT_GAP = 24
+TEXT_PANEL_RATIO = 0.26
+SIDE_PANEL_RATIO = 0.30
+TEXT_PANEL_FILL = "#050505"
+TEXT_PANEL_BORDER = "#1a1a1a"
+TEXT_PANEL_TEXT_COLOR = "#f2f2f2"
+TEXT_PANEL_TITLE_COLOR = "#9d9d9d"
+TEXT_PANEL_PADDING_X = 36
+TEXT_PANEL_PADDING_Y = 28
+TEXT_PANEL_BORDER_WIDTH = 1
+IMAGE_BACKGROUND = "#000000"
+MAX_TEXT_LINES = 6
 MAX_ERROR_LINES = 2
 
 
@@ -110,8 +113,8 @@ class LatestImageDisplay:
         ]
         for font_path in font_candidates:
             try:
-                self.body_font = ImageFont.truetype(font_path, OVERLAY_FONT_SIZE)
-                self.title_font = ImageFont.truetype(font_path, OVERLAY_TITLE_SIZE)
+                self.body_font = ImageFont.truetype(font_path, BODY_FONT_SIZE)
+                self.title_font = ImageFont.truetype(font_path, TITLE_FONT_SIZE)
                 return
             except OSError:
                 continue
@@ -156,7 +159,7 @@ class LatestImageDisplay:
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         canvas = Image.new("RGB", (screen_width, screen_height), "black")
-        composed = self.draw_overlay(canvas, shared_state)
+        composed = self.compose_layout(canvas, None, shared_state)
 
         self.current_photo = ImageTk.PhotoImage(composed)
         self.label.configure(image=self.current_photo, text="")
@@ -189,21 +192,8 @@ class LatestImageDisplay:
 
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        image_width, image_height = image.size
-
-        scale = min(screen_width / image_width, screen_height / image_height)
-        new_size = (
-            max(1, int(image_width * scale)),
-            max(1, int(image_height * scale)),
-        )
-        resized_image = image.resize(new_size, Image.Resampling.LANCZOS)
-
         canvas = Image.new("RGB", (screen_width, screen_height), "black")
-        offset_x = (screen_width - new_size[0]) // 2
-        offset_y = (screen_height - new_size[1]) // 2
-        canvas.paste(resized_image, (offset_x, offset_y))
-
-        composed = self.draw_overlay(canvas, shared_state)
+        composed = self.compose_layout(canvas, image, shared_state)
 
         self.current_photo = ImageTk.PhotoImage(composed)
         self.label.configure(image=self.current_photo, text="")
@@ -212,59 +202,33 @@ class LatestImageDisplay:
         print(f"Displayed: {image_path.name}")
         delete_two_generations_ago_image()
 
-    def draw_overlay(self, image: Image.Image, shared_state: dict | None) -> Image.Image:
-        draw = ImageDraw.Draw(image, "RGBA")
-        lines = self.get_overlay_lines(shared_state)
+    def compose_layout(
+        self, canvas: Image.Image, source_image: Image.Image | None, shared_state: dict | None
+    ) -> Image.Image:
+        draw = ImageDraw.Draw(canvas, "RGBA")
 
-        title_height = 0
-        line_heights = []
-        text_width = 0
-        text_height = 0
+        if LAYOUT_MODE == "side_panel":
+            image_box, panel_box = self.resolve_side_panel_boxes(canvas.width, canvas.height)
+        else:
+            image_box, panel_box = self.resolve_stacked_boxes(canvas.width, canvas.height)
 
-        if SHOW_OVERLAY_TITLE:
-            title_box = draw.textbbox((0, 0), OVERLAY_TITLE, font=self.title_font)
-            title_height = title_box[3] - title_box[1]
-            text_width = max(text_width, title_box[2] - title_box[0])
-            text_height += title_height + OVERLAY_LINE_SPACING
+        draw.rectangle(panel_box, fill=TEXT_PANEL_FILL, outline=TEXT_PANEL_BORDER, width=TEXT_PANEL_BORDER_WIDTH)
 
-        for line in lines:
-            box = draw.textbbox((0, 0), line, font=self.body_font)
-            line_width = box[2] - box[0]
-            line_height = box[3] - box[1]
-            line_heights.append(line_height)
-            text_width = max(text_width, line_width)
-            text_height += line_height
+        if source_image is not None:
+            self.paste_fitted_image(canvas, source_image, image_box)
+        else:
+            draw.rectangle(image_box, fill=IMAGE_BACKGROUND)
 
-        if len(lines) > 1:
-            text_height += OVERLAY_LINE_SPACING * (len(lines) - 1)
-
-        box_width = int(text_width + (OVERLAY_BOX_PADDING_X * 2))
-        box_height = int(text_height + (OVERLAY_BOX_PADDING_Y * 2))
-        x, y = self.resolve_overlay_position(image.width, image.height, box_width, box_height)
-
-        draw.rounded_rectangle(
-            (x, y, x + box_width, y + box_height),
-            radius=18,
-            fill=self.hex_to_rgba(OVERLAY_BOX_FILL, OVERLAY_BOX_ALPHA),
-        )
-
-        text_x = x + OVERLAY_BOX_PADDING_X
-        text_y = y + OVERLAY_BOX_PADDING_Y
-        if SHOW_OVERLAY_TITLE:
-            draw.text((text_x, text_y), OVERLAY_TITLE, font=self.title_font, fill=OVERLAY_TITLE_COLOR)
-            text_y += title_height + OVERLAY_LINE_SPACING
-
-        for index, line in enumerate(lines):
-            draw.text((text_x, text_y), line, font=self.body_font, fill=OVERLAY_TEXT_COLOR)
-            text_y += line_heights[index] + OVERLAY_LINE_SPACING
-
-        return image
+        self.draw_text_panel(canvas, panel_box, shared_state)
+        return canvas
 
     def get_overlay_lines(self, shared_state: dict | None) -> list[str]:
         lines = []
         if shared_state:
             lines = list(shared_state.get("live_inference_lines", []))[:MAX_TEXT_LINES]
             last_image_error = shared_state.get("last_image_error")
+            if shared_state.get("image_generation_in_progress"):
+                lines.append("image refresh in progress")
             if last_image_error:
                 error_text = str(last_image_error).replace("\n", " ").strip()
                 if len(error_text) > 140:
@@ -277,14 +241,79 @@ class LatestImageDisplay:
             return ["waiting for interpreted sensor state"]
         return lines
 
-    def resolve_overlay_position(self, image_width: int, image_height: int, box_width: int, box_height: int) -> tuple[int, int]:
-        if OVERLAY_POSITION == "top_left":
-            return OVERLAY_MARGIN_X, OVERLAY_MARGIN_Y
-        if OVERLAY_POSITION == "top_right":
-            return image_width - box_width - OVERLAY_MARGIN_X, OVERLAY_MARGIN_Y
-        if OVERLAY_POSITION == "bottom_right":
-            return image_width - box_width - OVERLAY_MARGIN_X, image_height - box_height - OVERLAY_MARGIN_Y
-        return OVERLAY_MARGIN_X, image_height - box_height - OVERLAY_MARGIN_Y
+    def resolve_stacked_boxes(
+        self, screen_width: int, screen_height: int
+    ) -> tuple[tuple[int, int, int, int], tuple[int, int, int, int]]:
+        panel_height = int((screen_height - (SCREEN_MARGIN * 2) - CONTENT_GAP) * TEXT_PANEL_RATIO)
+        panel_height = max(180, panel_height)
+        image_height = screen_height - (SCREEN_MARGIN * 2) - CONTENT_GAP - panel_height
+        image_box = (
+            SCREEN_MARGIN,
+            SCREEN_MARGIN,
+            screen_width - SCREEN_MARGIN,
+            SCREEN_MARGIN + max(1, image_height),
+        )
+        panel_box = (
+            SCREEN_MARGIN,
+            image_box[3] + CONTENT_GAP,
+            screen_width - SCREEN_MARGIN,
+            screen_height - SCREEN_MARGIN,
+        )
+        return image_box, panel_box
+
+    def resolve_side_panel_boxes(
+        self, screen_width: int, screen_height: int
+    ) -> tuple[tuple[int, int, int, int], tuple[int, int, int, int]]:
+        panel_width = int((screen_width - (SCREEN_MARGIN * 2) - CONTENT_GAP) * SIDE_PANEL_RATIO)
+        panel_width = max(280, panel_width)
+        image_box = (
+            SCREEN_MARGIN,
+            SCREEN_MARGIN,
+            screen_width - SCREEN_MARGIN - CONTENT_GAP - panel_width,
+            screen_height - SCREEN_MARGIN,
+        )
+        panel_box = (
+            image_box[2] + CONTENT_GAP,
+            SCREEN_MARGIN,
+            screen_width - SCREEN_MARGIN,
+            screen_height - SCREEN_MARGIN,
+        )
+        return image_box, panel_box
+
+    def paste_fitted_image(
+        self, canvas: Image.Image, image: Image.Image, box: tuple[int, int, int, int]
+    ) -> None:
+        box_width = max(1, box[2] - box[0])
+        box_height = max(1, box[3] - box[1])
+        image_width, image_height = image.size
+        scale = min(box_width / image_width, box_height / image_height)
+        new_size = (
+            max(1, int(image_width * scale)),
+            max(1, int(image_height * scale)),
+        )
+        resized_image = image.resize(new_size, Image.Resampling.LANCZOS)
+        offset_x = box[0] + (box_width - new_size[0]) // 2
+        offset_y = box[1] + (box_height - new_size[1]) // 2
+        canvas.paste(resized_image, (offset_x, offset_y))
+
+    def draw_text_panel(
+        self, canvas: Image.Image, panel_box: tuple[int, int, int, int], shared_state: dict | None
+    ) -> None:
+        draw = ImageDraw.Draw(canvas, "RGBA")
+        lines = self.get_overlay_lines(shared_state)
+        text_x = panel_box[0] + TEXT_PANEL_PADDING_X
+        text_y = panel_box[1] + TEXT_PANEL_PADDING_Y
+
+        title_box = draw.textbbox((0, 0), PANEL_TITLE, font=self.title_font)
+        title_height = title_box[3] - title_box[1]
+        draw.text((text_x, text_y), PANEL_TITLE, font=self.title_font, fill=TEXT_PANEL_TITLE_COLOR)
+        text_y += title_height + LINE_SPACING
+
+        for line in lines:
+            draw.text((text_x, text_y), line, font=self.body_font, fill=TEXT_PANEL_TEXT_COLOR)
+            line_box = draw.textbbox((0, 0), line, font=self.body_font)
+            line_height = line_box[3] - line_box[1]
+            text_y += line_height + LINE_SPACING
 
     def hex_to_rgba(self, hex_value: str, alpha: int) -> tuple[int, int, int, int]:
         hex_value = hex_value.lstrip("#")
