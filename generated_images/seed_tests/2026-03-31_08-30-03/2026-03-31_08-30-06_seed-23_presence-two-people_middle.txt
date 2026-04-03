@@ -1,0 +1,223 @@
+generation_timestamp: 2026-03-31T08:30:06
+seed: 23
+seed_test_mode: True
+
+raw_sensor_frames:
+[
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 54,
+      "stationary_energy": 100,
+      "detection_distance_cm": 0,
+      "moving_energy": 100,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 3,
+      "stationary_distance_cm": 30,
+      "target_state": "MOVING_AND_STATIONARY"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 30.7,
+      "temperature_c": 18.56,
+      "pressure_hpa": 1009.16,
+      "raw_temperature_c": 20.56
+    },
+    "light": {
+      "percent": 51.6,
+      "raw": 31719
+    },
+    "uptime_ms": 21104,
+    "type": "sensor_frame",
+    "seq": 5,
+    "sen0628": {
+      "max_mm": 11,
+      "mean_mm": 4.9,
+      "center_close_points": 25,
+      "center_mm": 3,
+      "right_close_points": 13,
+      "valid_points": 52,
+      "min_mm": 1,
+      "right_zone_mm": 5.23,
+      "left_zone_mm": 5.07,
+      "near_points": 52,
+      "far_points": 0,
+      "mid_points": 0,
+      "center_zone_mm": 4.64,
+      "left_close_points": 14
+    }
+  },
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 30,
+      "stationary_energy": 100,
+      "detection_distance_cm": 0,
+      "moving_energy": 100,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 3,
+      "stationary_distance_cm": 30,
+      "target_state": "MOVING_AND_STATIONARY"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 30.63,
+      "temperature_c": 18.57,
+      "pressure_hpa": 1009.16,
+      "raw_temperature_c": 20.57
+    },
+    "light": {
+      "percent": 50.6,
+      "raw": 32407
+    },
+    "uptime_ms": 23131,
+    "type": "sensor_frame",
+    "seq": 6,
+    "sen0628": {
+      "max_mm": 11,
+      "mean_mm": 5.37,
+      "center_close_points": 21,
+      "center_mm": 1,
+      "right_close_points": 12,
+      "valid_points": 46,
+      "min_mm": 1,
+      "right_zone_mm": 5.83,
+      "left_zone_mm": 5.15,
+      "near_points": 46,
+      "far_points": 0,
+      "mid_points": 0,
+      "center_zone_mm": 5.24,
+      "left_close_points": 13
+    }
+  },
+  {
+    "ld2410c": {
+      "payload_length": 13,
+      "moving_distance_cm": 30,
+      "stationary_energy": 100,
+      "detection_distance_cm": 0,
+      "moving_energy": 100,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 3,
+      "stationary_distance_cm": 38,
+      "target_state": "MOVING_AND_STATIONARY"
+    },
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 30.59,
+      "temperature_c": 18.57,
+      "pressure_hpa": 1009.16,
+      "raw_temperature_c": 20.57
+    },
+    "light": {
+      "percent": 47.9,
+      "raw": 34120
+    },
+    "uptime_ms": 25158,
+    "type": "sensor_frame",
+    "seq": 7,
+    "sen0628": {
+      "max_mm": 13,
+      "mean_mm": 4.25,
+      "center_close_points": 26,
+      "center_mm": 3,
+      "right_close_points": 13,
+      "valid_points": 53,
+      "min_mm": 1,
+      "right_zone_mm": 6.23,
+      "left_zone_mm": 2.86,
+      "near_points": 53,
+      "far_points": 0,
+      "mid_points": 0,
+      "center_zone_mm": 4.0,
+      "left_close_points": 14
+    }
+  }
+]
+
+smoothed_sensor_values:
+{
+  "frame_count": 3,
+  "seq_range": [
+    5,
+    7
+  ],
+  "uptime_ms": 25158,
+  "bme688": {
+    "temperature_c": 18.566666666666666,
+    "raw_temperature_c": 20.566666666666666,
+    "humidity_pct": 30.64,
+    "pressure_hpa": 1009.16,
+    "gas_ohms": 12917167.0
+  },
+  "light": {
+    "raw": 32748.666666666668,
+    "percent": 50.03333333333333
+  },
+  "ld2410c": {
+    "out": 1,
+    "target_state": "MOVING_AND_STATIONARY",
+    "target_state_raw": 3,
+    "moving_distance_cm": 38.0,
+    "moving_energy": 100.0,
+    "stationary_distance_cm": 32.666666666666664,
+    "stationary_energy": 100.0,
+    "detection_distance_cm": 0.0,
+    "status": null,
+    "state_history": [
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY"
+    ]
+  },
+  "sen0628": {
+    "center_mm": 2.3333333333333335,
+    "min_mm": 1.0,
+    "max_mm": 11.666666666666666,
+    "mean_mm": 4.84,
+    "valid_points": 50.333333333333336,
+    "left_zone_mm": 4.36,
+    "center_zone_mm": 4.626666666666666,
+    "right_zone_mm": 5.763333333333333,
+    "left_close_points": 13.666666666666666,
+    "center_close_points": 24.0,
+    "right_close_points": 12.666666666666666,
+    "near_points": 50.333333333333336,
+    "mid_points": 0.0,
+    "far_points": 0.0
+  },
+  "errors": {
+    "bme688_error": null,
+    "sen0628_error": null
+  }
+}
+
+interpreted_descriptors:
+{
+  "presence_activity": "active presence",
+  "presence_count": "two people",
+  "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, close to the sensor plane",
+  "sen0628_figure_side": "middle",
+  "presence_location": "very close to the sensing system, spread across the full field of view",
+  "lighting_condition": "moderate light",
+  "atmospheric_condition": "cool dry air",
+  "spatial_impression": "shallow and fragmented",
+  "abstract_background": "abstract interior backdrop interpreted from sensor data, restrained diffused tones with pale breathing room, clear separation with dry pale textures kept light and minimal, desaturated tones, muted color, large open areas"
+}
+
+prompt_sections:
+{
+  "base_scene_prompt": "photorealistic interior room, ambiguous architectural space, sparse floor plane, muted low-saturation gradients, faint atmospheric haze, smooth abstract curved forms, minimal detail, large open areas, restrained background detail, believable materials, natural shadows, realistic lens perspective, dreamlike only in interpretation, not in rendering style, avoid painterly, graphic, or overtly surreal aesthetics",
+  "people_directive": "human presence inferred as active presence, two people, very close to the sensing system, spread across the full field of view, SEN0628 suggests occupancy spread across the room, close to the sensor plane, lateral emphasis toward the middle side, show ambiguous human presence, partially inferred occupants, indistinct people, vague unresolved figures, human forms are present but not fully defined, the figures should feel estimated from sensor traces, rough placement only, not exact positioning",
+  "composition_directive": "single interior scene, cinematic photography, medium-long framing, background remains stable and secondary, human placement should feel estimated rather than precise, rough lateral placement only, unresolved spatial certainty, the room should feel inferred from sensors instead of confidently mapped, keep human presence visible but unresolved, not confidently identified, not precisely staged",
+  "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout"
+}
+
+final_prompt:
+photorealistic interior room, ambiguous architectural space, sparse floor plane, muted low-saturation gradients, faint atmospheric haze, smooth abstract curved forms, minimal detail, large open areas, restrained background detail, believable materials, natural shadows, realistic lens perspective, dreamlike only in interpretation, not in rendering style, avoid painterly, graphic, or overtly surreal aesthetics, human presence inferred as active presence, two people, very close to the sensing system, spread across the full field of view, SEN0628 suggests occupancy spread across the room, close to the sensor plane, lateral emphasis toward the middle side, show ambiguous human presence, partially inferred occupants, indistinct people, vague unresolved figures, human forms are present but not fully defined, the figures should feel estimated from sensor traces, rough placement only, not exact positioning, single interior scene, cinematic photography, medium-long framing, background remains stable and secondary, human placement should feel estimated rather than precise, rough lateral placement only, unresolved spatial certainty, the room should feel inferred from sensors instead of confidently mapped, keep human presence visible but unresolved, not confidently identified, not precisely staged
+
+negative_prompt:
+text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout

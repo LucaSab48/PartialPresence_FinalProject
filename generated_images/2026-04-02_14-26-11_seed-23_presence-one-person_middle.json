@@ -1,0 +1,231 @@
+{
+  "timestamp": "2026-04-02T14:26:11",
+  "seed": 23,
+  "seed_test_mode": false,
+  "final_prompt": "human presence inferred as still presence, estimated as one person, one person near the center, show exactly one human figure on the center of the room, near the front of the room, render exactly one adult human figure standing in the room, full-body, clearly visible, and readable at first glance, when presence is inferred the room must not be empty, a person must be visibly present in the final image, occupants must be obvious on first glance rather than lost in the background, do not imply presence only through shadows or traces, show actual human bodies standing in the space, rough placement may be estimated from sensors, but the people themselves should be clearly rendered, photorealistic empty installation space, gallery-like interior, white cube exhibition room, fixed camera angle, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, background consistency is more important than novelty, avoid painterly, graphic, or overtly surreal aesthetics, single interior scene, cinematic photography, medium-long framing, fixed composition, background remains stable and secondary, human placement should feel estimated rather than precise, rough lateral placement only, unresolved spatial certainty, the room should feel inferred from sensors instead of confidently mapped, keep the same room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, people should occupy a noticeable amount of the frame and not be tiny distant background details, single human figure, center-front placement, near the sensing system, moderate indoor light, slight left-center spread",
+  "prompt_sections": {
+    "base_scene_prompt": "photorealistic empty installation space, gallery-like interior, white cube exhibition room, fixed camera angle, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, background consistency is more important than novelty, avoid painterly, graphic, or overtly surreal aesthetics",
+    "people_directive": "human presence inferred as still presence, estimated as one person, one person near the center, show exactly one human figure on the center of the room, near the front of the room, render exactly one adult human figure standing in the room, full-body, clearly visible, and readable at first glance, when presence is inferred the room must not be empty, a person must be visibly present in the final image, occupants must be obvious on first glance rather than lost in the background, do not imply presence only through shadows or traces, show actual human bodies standing in the space, rough placement may be estimated from sensors, but the people themselves should be clearly rendered",
+    "composition_directive": "single interior scene, cinematic photography, medium-long framing, fixed composition, background remains stable and secondary, human placement should feel estimated rather than precise, rough lateral placement only, unresolved spatial certainty, the room should feel inferred from sensors instead of confidently mapped, keep the same room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, people should occupy a noticeable amount of the frame and not be tiny distant background details",
+    "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people"
+  },
+  "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people",
+  "interpreted_descriptors": {
+    "presence_activity": "still presence",
+    "presence_count": "one person",
+    "sen0628_spatial_estimate": "SEN0628 suggests occupancy shared across the left and center zones, in the mid-room",
+    "sen0628_figure_side": "middle",
+    "presence_location": "very close to the sensing system, distributed across adjacent zones",
+    "lighting_condition": "moderate light",
+    "atmospheric_condition": "atmosphere uncertain",
+    "spatial_impression": "compressed and near",
+    "abstract_background": "abstract interior backdrop interpreted from sensor data, restrained diffused tones with pale breathing room, indeterminate atmospheric traces kept faint and sparse, desaturated tones, muted color, large open areas",
+    "figure_count": 1,
+    "placement_summary": "one person near the center",
+    "placement_prompt": "show exactly one human figure on the center of the room, near the front of the room"
+  },
+  "smoothed_sensor_values": {
+    "frame_count": 4,
+    "seq_range": [
+      4,
+      7
+    ],
+    "uptime_ms": 25280,
+    "bme688": null,
+    "light": {
+      "raw": 30311.0,
+      "percent": 53.75
+    },
+    "ld2410c": {
+      "out": 1,
+      "target_state": "STATIONARY_TARGET",
+      "target_state_raw": 2,
+      "moving_distance_cm": 58.75,
+      "moving_energy": 0.0,
+      "stationary_distance_cm": 100.0,
+      "stationary_energy": 80.75,
+      "detection_distance_cm": 72.0,
+      "status": null,
+      "state_history": [
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET"
+      ]
+    },
+    "sen0628": {
+      "center_mm": 4000.0,
+      "min_mm": 810.0,
+      "max_mm": 2736.0,
+      "mean_mm": 1391.905,
+      "valid_points": 17.5,
+      "left_zone_mm": 1469.4425,
+      "center_zone_mm": 1335.055,
+      "right_zone_mm": 2206.5,
+      "left_close_points": 4.0,
+      "center_close_points": 8.75,
+      "right_close_points": 0.25,
+      "near_points": 9.25,
+      "mid_points": 4.0,
+      "far_points": 4.25
+    },
+    "errors": {
+      "bme688_error": "BME688 not found",
+      "sen0628_error": null
+    }
+  },
+  "raw_sensor_frames": [
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 145,
+        "stationary_energy": 100,
+        "detection_distance_cm": 127,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 145,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "seq": 4,
+      "light": {
+        "percent": 52.9,
+        "raw": 30855
+      },
+      "uptime_ms": 19180,
+      "type": "sensor_frame",
+      "bme688_error": "BME688 not found",
+      "sen0628": {
+        "max_mm": 3474,
+        "mean_mm": 1558.6,
+        "center_close_points": 9,
+        "center_mm": 4000,
+        "right_close_points": 0,
+        "valid_points": 20,
+        "min_mm": 815,
+        "right_zone_mm": 2496.0,
+        "left_zone_mm": 1313.6,
+        "near_points": 9,
+        "far_points": 6,
+        "mid_points": 5,
+        "center_zone_mm": 1579.14,
+        "left_close_points": 5
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 100,
+        "detection_distance_cm": 78,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 30,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "seq": 5,
+      "light": {
+        "percent": 54.0,
+        "raw": 30167
+      },
+      "uptime_ms": 21207,
+      "type": "sensor_frame",
+      "bme688_error": "BME688 not found",
+      "sen0628": {
+        "max_mm": 2567,
+        "mean_mm": 1364.53,
+        "center_close_points": 8,
+        "center_mm": 4000,
+        "right_close_points": 0,
+        "valid_points": 17,
+        "min_mm": 816,
+        "right_zone_mm": 2516.0,
+        "left_zone_mm": 1241.0,
+        "near_points": 8,
+        "far_points": 4,
+        "mid_points": 5,
+        "center_zone_mm": 1196.0,
+        "left_close_points": 5
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 62,
+        "detection_distance_cm": 0,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 30,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "seq": 6,
+      "light": {
+        "percent": 54.1,
+        "raw": 30103
+      },
+      "uptime_ms": 23234,
+      "type": "sensor_frame",
+      "bme688_error": "BME688 not found",
+      "sen0628": {
+        "max_mm": 2443,
+        "mean_mm": 1293.8,
+        "center_close_points": 9,
+        "center_mm": 4000,
+        "right_close_points": 1,
+        "valid_points": 20,
+        "min_mm": 789,
+        "right_zone_mm": 1607.5,
+        "left_zone_mm": 1223.17,
+        "near_points": 11,
+        "far_points": 4,
+        "mid_points": 5,
+        "center_zone_mm": 1276.83,
+        "left_close_points": 6
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 61,
+        "detection_distance_cm": 83,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 195,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "seq": 7,
+      "light": {
+        "percent": 54.0,
+        "raw": 30119
+      },
+      "uptime_ms": 25280,
+      "type": "sensor_frame",
+      "bme688_error": "BME688 not found",
+      "sen0628": {
+        "max_mm": 2460,
+        "mean_mm": 1350.69,
+        "center_close_points": 9,
+        "center_mm": 4000,
+        "right_close_points": 0,
+        "valid_points": 13,
+        "min_mm": 820,
+        "right_zone_mm": null,
+        "left_zone_mm": 2100.0,
+        "near_points": 9,
+        "far_points": 3,
+        "mid_points": 1,
+        "center_zone_mm": 1288.25,
+        "left_close_points": 0
+      }
+    }
+  ]
+}

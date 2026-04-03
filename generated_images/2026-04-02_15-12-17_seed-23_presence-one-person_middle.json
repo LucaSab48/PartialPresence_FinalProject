@@ -1,0 +1,371 @@
+{
+  "timestamp": "2026-04-02T15:12:17",
+  "seed": 23,
+  "seed_test_mode": false,
+  "final_prompt": "human presence is being inferred as still presence, require one visible human figure as the occupancy revision, near the middle zone, leaning nearer to the foreground, the room must read as visibly occupied, the figures must be noticeable at first glance, render adult human bodies clearly enough to read immediately, not just traces, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, allow some silhouette ambiguity without removing the body presence, vary the figures more than the room itself, treat human figures as the primary changing element, allow variation in lateral placement, depth placement, spacing, scale, clustering, and separation while keeping the room broadly stable, same room retained, background structure held, camera view kept similar, single larger foreground figure, one centered or slightly off-center figure emphasis, foreground weighting increased, photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics, preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element, single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details",
+  "prompt_sections": {
+    "base_scene_prompt": "photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics",
+    "background_continuity_directive": "preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element",
+    "people_directive": "human presence is being inferred as still presence, require one visible human figure as the occupancy revision, near the middle zone, leaning nearer to the foreground, the room must read as visibly occupied, the figures must be noticeable at first glance, render adult human bodies clearly enough to read immediately, not just traces, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, allow some silhouette ambiguity without removing the body presence, vary the figures more than the room itself",
+    "figure_variation_directive": "treat human figures as the primary changing element, allow variation in lateral placement, depth placement, spacing, scale, clustering, and separation while keeping the room broadly stable, same room retained, background structure held, camera view kept similar, single larger foreground figure, one centered or slightly off-center figure emphasis, foreground weighting increased",
+    "composition_directive": "single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details",
+    "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, changed architecture, changed camera angle, new furniture"
+  },
+  "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, changed architecture, changed camera angle, new furniture",
+  "interpreted_descriptors": {
+    "presence_activity": "still presence",
+    "presence_count": "one person",
+    "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, close to the sensor plane",
+    "sen0628_figure_side": "middle",
+    "presence_location": "very close to the sensing system, spread across the full field of view",
+    "lighting_condition": "moderate light",
+    "atmospheric_condition": "cool dry air",
+    "spatial_impression": "shallow and fragmented",
+    "abstract_background": "abstract interior backdrop interpreted from sensor data, restrained diffused tones with pale breathing room, clear separation with dry pale textures kept light and minimal, desaturated tones, muted color, large open areas",
+    "figure_count": 1,
+    "placement_summary": "one person near the center",
+    "placement_prompt": "show exactly one human figure on the center of the room, near the front of the room",
+    "depth_band": "front",
+    "primary_zone": "center",
+    "secondary_zone": "right",
+    "active_zones": [
+      "center",
+      "right",
+      "left"
+    ],
+    "layout_mode": "single",
+    "spatial_certainty": "multi-zone certainty reduced",
+    "figure_variation_modifiers": [
+      "same room retained",
+      "background structure held",
+      "camera view kept similar",
+      "single larger foreground figure",
+      "one centered or slightly off-center figure emphasis",
+      "foreground weighting increased"
+    ]
+  },
+  "smoothed_sensor_values": {
+    "frame_count": 6,
+    "seq_range": [
+      58,
+      63
+    ],
+    "uptime_ms": 138345,
+    "bme688": {
+      "temperature_c": 20.904999999999998,
+      "raw_temperature_c": 22.905,
+      "humidity_pct": 27.808333333333334,
+      "pressure_hpa": 1025.4066666666668,
+      "gas_ohms": 12917167.0
+    },
+    "light": {
+      "raw": 37809.0,
+      "percent": 42.300000000000004
+    },
+    "ld2410c": {
+      "out": 1,
+      "target_state": "STATIONARY_TARGET",
+      "target_state_raw": 2,
+      "moving_distance_cm": 30.0,
+      "moving_energy": 0.0,
+      "stationary_distance_cm": 30.0,
+      "stationary_energy": 82.16666666666667,
+      "detection_distance_cm": 0.0,
+      "status": null,
+      "state_history": [
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET"
+      ]
+    },
+    "sen0628": {
+      "center_mm": 187.33333333333334,
+      "min_mm": 163.0,
+      "max_mm": 1744.3333333333333,
+      "mean_mm": 278.99666666666667,
+      "valid_points": 58.333333333333336,
+      "left_zone_mm": 619.6833333333333,
+      "center_zone_mm": 199.15666666666667,
+      "right_zone_mm": 190.1783333333333,
+      "left_close_points": 11.0,
+      "center_close_points": 31.0,
+      "right_close_points": 16.0,
+      "near_points": 57.333333333333336,
+      "mid_points": 0.6666666666666666,
+      "far_points": 0.3333333333333333
+    },
+    "errors": {
+      "bme688_error": null,
+      "sen0628_error": null
+    }
+  },
+  "raw_sensor_frames": [
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 100,
+        "detection_distance_cm": 0,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 30,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 27.85,
+        "temperature_c": 20.9,
+        "pressure_hpa": 1025.35,
+        "raw_temperature_c": 22.9
+      },
+      "light": {
+        "percent": 42.3,
+        "raw": 37785
+      },
+      "uptime_ms": 128262,
+      "type": "sensor_frame",
+      "seq": 58,
+      "sen0628": {
+        "max_mm": 1334,
+        "mean_mm": 267.39,
+        "center_close_points": 31,
+        "center_mm": 187,
+        "right_close_points": 16,
+        "valid_points": 57,
+        "min_mm": 166,
+        "right_zone_mm": 191.62,
+        "left_zone_mm": 591.9,
+        "near_points": 56,
+        "far_points": 0,
+        "mid_points": 1,
+        "center_zone_mm": 201.81,
+        "left_close_points": 10
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 98,
+        "detection_distance_cm": 0,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 30,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 27.81,
+        "temperature_c": 20.9,
+        "pressure_hpa": 1025.33,
+        "raw_temperature_c": 22.9
+      },
+      "light": {
+        "percent": 41.5,
+        "raw": 38313
+      },
+      "uptime_ms": 130289,
+      "type": "sensor_frame",
+      "seq": 59,
+      "sen0628": {
+        "max_mm": 1267,
+        "mean_mm": 263.84,
+        "center_close_points": 31,
+        "center_mm": 191,
+        "right_close_points": 16,
+        "valid_points": 58,
+        "min_mm": 163,
+        "right_zone_mm": 191.38,
+        "left_zone_mm": 548.82,
+        "near_points": 57,
+        "far_points": 0,
+        "mid_points": 1,
+        "center_zone_mm": 200.13,
+        "left_close_points": 11
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 93,
+        "detection_distance_cm": 0,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 30,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 27.8,
+        "temperature_c": 20.91,
+        "pressure_hpa": 1025.47,
+        "raw_temperature_c": 22.91
+      },
+      "light": {
+        "percent": 43.0,
+        "raw": 37369
+      },
+      "uptime_ms": 132317,
+      "type": "sensor_frame",
+      "seq": 60,
+      "sen0628": {
+        "max_mm": 2693,
+        "mean_mm": 287.79,
+        "center_close_points": 31,
+        "center_mm": 191,
+        "right_close_points": 16,
+        "valid_points": 58,
+        "min_mm": 162,
+        "right_zone_mm": 190.38,
+        "left_zone_mm": 676.64,
+        "near_points": 57,
+        "far_points": 1,
+        "mid_points": 0,
+        "center_zone_mm": 200.1,
+        "left_close_points": 10
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 76,
+        "detection_distance_cm": 0,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 30,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 27.79,
+        "temperature_c": 20.9,
+        "pressure_hpa": 1025.43,
+        "raw_temperature_c": 22.9
+      },
+      "light": {
+        "percent": 42.8,
+        "raw": 37513
+      },
+      "uptime_ms": 134345,
+      "type": "sensor_frame",
+      "seq": 61,
+      "sen0628": {
+        "max_mm": 1084,
+        "mean_mm": 260.22,
+        "center_close_points": 31,
+        "center_mm": 186,
+        "right_close_points": 16,
+        "valid_points": 58,
+        "min_mm": 163,
+        "right_zone_mm": 189.31,
+        "left_zone_mm": 536.45,
+        "near_points": 58,
+        "far_points": 0,
+        "mid_points": 0,
+        "center_zone_mm": 198.81,
+        "left_close_points": 11
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 69,
+        "detection_distance_cm": 0,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 30,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 27.8,
+        "temperature_c": 20.91,
+        "pressure_hpa": 1025.43,
+        "raw_temperature_c": 22.91
+      },
+      "light": {
+        "percent": 42.1,
+        "raw": 37945
+      },
+      "uptime_ms": 136345,
+      "type": "sensor_frame",
+      "seq": 62,
+      "sen0628": {
+        "max_mm": 1332,
+        "mean_mm": 277.14,
+        "center_close_points": 31,
+        "center_mm": 185,
+        "right_close_points": 16,
+        "valid_points": 59,
+        "min_mm": 162,
+        "right_zone_mm": 189.88,
+        "left_zone_mm": 599.67,
+        "near_points": 58,
+        "far_points": 0,
+        "mid_points": 1,
+        "center_zone_mm": 197.32,
+        "left_close_points": 12
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 30,
+        "stationary_energy": 57,
+        "detection_distance_cm": 0,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 30,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 27.8,
+        "temperature_c": 20.91,
+        "pressure_hpa": 1025.43,
+        "raw_temperature_c": 22.91
+      },
+      "light": {
+        "percent": 42.1,
+        "raw": 37929
+      },
+      "uptime_ms": 138345,
+      "type": "sensor_frame",
+      "seq": 63,
+      "sen0628": {
+        "max_mm": 2756,
+        "mean_mm": 317.6,
+        "center_close_points": 31,
+        "center_mm": 184,
+        "right_close_points": 16,
+        "valid_points": 60,
+        "min_mm": 162,
+        "right_zone_mm": 188.5,
+        "left_zone_mm": 764.62,
+        "near_points": 58,
+        "far_points": 1,
+        "mid_points": 1,
+        "center_zone_mm": 196.77,
+        "left_close_points": 12
+      }
+    }
+  ]
+}

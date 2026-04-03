@@ -1,0 +1,258 @@
+{
+  "timestamp": "2026-03-31T10:09:16",
+  "seed": 333,
+  "seed_test_mode": false,
+  "final_prompt": "photorealistic interior room, sparse floor plane, muted low-saturation gradients, faint atmospheric haze, smooth abstract curved forms, minimal detail, large open areas, restrained background detail, believable materials, realistic lens perspective, dreamlike only in interpretation, not in rendering style, avoid painterly, graphic, or overtly surreal aesthetics, human presence inferred as active presence, one person, very close to the sensing system, spread across the full field of view, SEN0628 suggests occupancy spread across the room, close to the sensor plane, lateral emphasis toward the middle side, human presence should be visible in the room, even if the forms are uncertain, at least one visible human form should appear when presence is inferred, the occupants should be perceptible, but not fully defined, figures remain ambiguous and partially unresolved, show ambiguous human presence, partially inferred occupants, indistinct people, vague unresolved figures, human forms are present but not fully defined, the figures should feel estimated from sensor traces, rough placement only, not exact positioning, single interior scene, cinematic photography, medium-long framing, background remains stable and secondary, human placement should feel estimated rather than precise, rough lateral placement only, unresolved spatial certainty, the room should feel inferred from sensors instead of confidently mapped, keep human presence visible but unresolved, not confidently identified, not precisely staged",
+  "prompt_sections": {
+    "base_scene_prompt": "photorealistic interior room, sparse floor plane, muted low-saturation gradients, faint atmospheric haze, smooth abstract curved forms, minimal detail, large open areas, restrained background detail, believable materials, realistic lens perspective, dreamlike only in interpretation, not in rendering style, avoid painterly, graphic, or overtly surreal aesthetics",
+    "people_directive": "human presence inferred as active presence, one person, very close to the sensing system, spread across the full field of view, SEN0628 suggests occupancy spread across the room, close to the sensor plane, lateral emphasis toward the middle side, human presence should be visible in the room, even if the forms are uncertain, at least one visible human form should appear when presence is inferred, the occupants should be perceptible, but not fully defined, figures remain ambiguous and partially unresolved, show ambiguous human presence, partially inferred occupants, indistinct people, vague unresolved figures, human forms are present but not fully defined, the figures should feel estimated from sensor traces, rough placement only, not exact positioning",
+    "composition_directive": "single interior scene, cinematic photography, medium-long framing, background remains stable and secondary, human placement should feel estimated rather than precise, rough lateral placement only, unresolved spatial certainty, the room should feel inferred from sensors instead of confidently mapped, keep human presence visible but unresolved, not confidently identified, not precisely staged",
+    "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout"
+  },
+  "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout",
+  "interpreted_descriptors": {
+    "presence_activity": "active presence",
+    "presence_count": "one person",
+    "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, close to the sensor plane",
+    "sen0628_figure_side": "middle",
+    "presence_location": "very close to the sensing system, spread across the full field of view",
+    "lighting_condition": "moderate light",
+    "atmospheric_condition": "cool dry air",
+    "spatial_impression": "shallow and fragmented",
+    "abstract_background": "abstract interior backdrop interpreted from sensor data, restrained diffused tones with pale breathing room, clear separation with dry pale textures kept light and minimal, desaturated tones, muted color, large open areas"
+  },
+  "smoothed_sensor_values": {
+    "frame_count": 4,
+    "seq_range": [
+      32,
+      35
+    ],
+    "uptime_ms": 81848,
+    "bme688": {
+      "temperature_c": 20.985,
+      "raw_temperature_c": 22.985,
+      "humidity_pct": 29.425,
+      "pressure_hpa": 1008.6,
+      "gas_ohms": 12917167.0
+    },
+    "light": {
+      "raw": 35140.0,
+      "percent": 46.375
+    },
+    "ld2410c": {
+      "out": 1,
+      "target_state": "STATIONARY_TARGET",
+      "target_state_raw": 2,
+      "moving_distance_cm": 68.25,
+      "moving_energy": 65.0,
+      "stationary_distance_cm": 131.75,
+      "stationary_energy": 100.0,
+      "detection_distance_cm": 71.5,
+      "status": null,
+      "state_history": [
+        "STATIONARY_TARGET",
+        "MOVING_AND_STATIONARY",
+        "STATIONARY_TARGET",
+        "MOVING_AND_STATIONARY"
+      ]
+    },
+    "sen0628": {
+      "center_mm": 283.25,
+      "min_mm": 38.25,
+      "max_mm": 1136.0,
+      "mean_mm": 226.45,
+      "valid_points": 59.0,
+      "left_zone_mm": 237.215,
+      "center_zone_mm": 321.385,
+      "right_zone_mm": 50.22,
+      "left_close_points": 15.0,
+      "center_close_points": 28.0,
+      "right_close_points": 16.0,
+      "near_points": 59.0,
+      "mid_points": 0.0,
+      "far_points": 0.0
+    },
+    "errors": {
+      "bme688_error": null,
+      "sen0628_error": null
+    }
+  },
+  "raw_sensor_frames": [
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 69,
+        "stationary_energy": 100,
+        "detection_distance_cm": 48,
+        "moving_energy": 0,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 69,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 29.46,
+        "temperature_c": 20.98,
+        "pressure_hpa": 1008.57,
+        "raw_temperature_c": 22.98
+      },
+      "light": {
+        "percent": 45.7,
+        "raw": 35608
+      },
+      "uptime_ms": 75722,
+      "type": "sensor_frame",
+      "seq": 32,
+      "sen0628": {
+        "max_mm": 1140,
+        "mean_mm": 227.14,
+        "center_close_points": 28,
+        "center_mm": 282,
+        "right_close_points": 16,
+        "valid_points": 59,
+        "min_mm": 38,
+        "right_zone_mm": 50.31,
+        "left_zone_mm": 237.33,
+        "near_points": 59,
+        "far_points": 0,
+        "mid_points": 0,
+        "center_zone_mm": 322.71,
+        "left_close_points": 15
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 83,
+        "stationary_energy": 100,
+        "detection_distance_cm": 66,
+        "moving_energy": 100,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 3,
+        "stationary_distance_cm": 66,
+        "target_state": "MOVING_AND_STATIONARY"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 29.42,
+        "temperature_c": 20.98,
+        "pressure_hpa": 1008.62,
+        "raw_temperature_c": 22.98
+      },
+      "light": {
+        "percent": 47.2,
+        "raw": 34584
+      },
+      "uptime_ms": 77794,
+      "type": "sensor_frame",
+      "seq": 33,
+      "sen0628": {
+        "max_mm": 1157,
+        "mean_mm": 226.27,
+        "center_close_points": 28,
+        "center_mm": 282,
+        "right_close_points": 16,
+        "valid_points": 59,
+        "min_mm": 38,
+        "right_zone_mm": 49.88,
+        "left_zone_mm": 236.47,
+        "near_points": 59,
+        "far_points": 0,
+        "mid_points": 0,
+        "center_zone_mm": 321.61,
+        "left_close_points": 15
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 63,
+        "stationary_energy": 100,
+        "detection_distance_cm": 94,
+        "moving_energy": 100,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 2,
+        "stationary_distance_cm": 277,
+        "target_state": "STATIONARY_TARGET"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 29.42,
+        "temperature_c": 20.99,
+        "pressure_hpa": 1008.64,
+        "raw_temperature_c": 22.99
+      },
+      "light": {
+        "percent": 46.5,
+        "raw": 35048
+      },
+      "uptime_ms": 79822,
+      "type": "sensor_frame",
+      "seq": 34,
+      "sen0628": {
+        "max_mm": 1125,
+        "mean_mm": 226.02,
+        "center_close_points": 28,
+        "center_mm": 283,
+        "right_close_points": 16,
+        "valid_points": 59,
+        "min_mm": 39,
+        "right_zone_mm": 50.5,
+        "left_zone_mm": 237.13,
+        "near_points": 59,
+        "far_points": 0,
+        "mid_points": 0,
+        "center_zone_mm": 320.36,
+        "left_close_points": 15
+      }
+    },
+    {
+      "ld2410c": {
+        "payload_length": 13,
+        "moving_distance_cm": 58,
+        "stationary_energy": 100,
+        "detection_distance_cm": 78,
+        "moving_energy": 60,
+        "frame_type": 2,
+        "out": 1,
+        "target_state_raw": 3,
+        "stationary_distance_cm": 115,
+        "target_state": "MOVING_AND_STATIONARY"
+      },
+      "bme688": {
+        "gas_ohms": 12917167,
+        "humidity_pct": 29.4,
+        "temperature_c": 20.99,
+        "pressure_hpa": 1008.57,
+        "raw_temperature_c": 22.99
+      },
+      "light": {
+        "percent": 46.1,
+        "raw": 35320
+      },
+      "uptime_ms": 81848,
+      "type": "sensor_frame",
+      "seq": 35,
+      "sen0628": {
+        "max_mm": 1122,
+        "mean_mm": 226.37,
+        "center_close_points": 28,
+        "center_mm": 286,
+        "right_close_points": 16,
+        "valid_points": 59,
+        "min_mm": 38,
+        "right_zone_mm": 50.19,
+        "left_zone_mm": 237.93,
+        "near_points": 59,
+        "far_points": 0,
+        "mid_points": 0,
+        "center_zone_mm": 320.86,
+        "left_close_points": 15
+      }
+    }
+  ]
+}

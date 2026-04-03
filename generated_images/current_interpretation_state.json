@@ -1,66 +1,67 @@
 {
-  "updated_at": "2026-03-25T17:18:04",
+  "updated_at": "2026-04-02T15:12:26",
   "timing": {
-    "text_update_interval_seconds": 2,
-    "image_generation_interval_seconds": 10,
-    "state_stable_hold_seconds": 3
+    "text_update_interval_seconds": 0.6,
+    "image_generation_interval_seconds": 8.0,
+    "force_image_refresh_seconds": 10.0,
+    "state_stable_hold_seconds": 0.9
   },
   "raw_frame_summary": {
     "frame_count": 6,
-    "latest_seq": 424
+    "latest_seq": 68
   },
   "smoothed_sensor_values": {
     "frame_count": 6,
     "seq_range": [
-      419,
-      424
+      63,
+      68
     ],
-    "uptime_ms": 868117,
+    "uptime_ms": 148416,
     "bme688": {
-      "temperature_c": 21.61,
-      "raw_temperature_c": 23.61,
-      "humidity_pct": 18.733333333333334,
-      "pressure_hpa": 1018.3666666666667,
+      "temperature_c": 20.903333333333332,
+      "raw_temperature_c": 22.903333333333332,
+      "humidity_pct": 27.776666666666667,
+      "pressure_hpa": 1025.42,
       "gas_ohms": 12917167.0
     },
     "light": {
-      "raw": 18785.333333333332,
-      "percent": 71.33333333333333
+      "raw": 37454.166666666664,
+      "percent": 42.86666666666667
     },
     "ld2410c": {
       "out": 1,
-      "target_state": "MOVING_AND_STATIONARY",
-      "target_state_raw": 3,
-      "moving_distance_cm": 115.33333333333333,
-      "moving_energy": 84.0,
-      "stationary_distance_cm": 142.5,
-      "stationary_energy": 100.0,
-      "detection_distance_cm": 97.83333333333333,
+      "target_state": "STATIONARY_TARGET",
+      "target_state_raw": 2,
+      "moving_distance_cm": 66.83333333333333,
+      "moving_energy": 0.0,
+      "stationary_distance_cm": 66.83333333333333,
+      "stationary_energy": 83.66666666666667,
+      "detection_distance_cm": 35.833333333333336,
       "status": null,
       "state_history": [
-        "MOVING_AND_STATIONARY",
-        "MOVING_AND_STATIONARY",
-        "MOVING_AND_STATIONARY",
-        "MOVING_AND_STATIONARY",
-        "MOVING_AND_STATIONARY",
-        "MOVING_AND_STATIONARY"
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET",
+        "STATIONARY_TARGET"
       ]
     },
     "sen0628": {
-      "center_mm": 1543.5,
-      "min_mm": 212.83333333333334,
-      "max_mm": 1364.5,
-      "mean_mm": 346.83,
-      "valid_points": 34.0,
-      "left_zone_mm": 708.6033333333334,
-      "center_zone_mm": 322.33666666666664,
-      "right_zone_mm": 352.1016666666667,
-      "left_close_points": 3.1666666666666665,
-      "center_close_points": 18.5,
-      "right_close_points": 12.0,
-      "near_points": 33.666666666666664,
-      "mid_points": 0.16666666666666666,
-      "far_points": 0.16666666666666666
+      "center_mm": 369.3333333333333,
+      "min_mm": 152.5,
+      "max_mm": 2041.5,
+      "mean_mm": 350.84666666666664,
+      "valid_points": 53.0,
+      "left_zone_mm": 874.4933333333333,
+      "center_zone_mm": 249.40166666666667,
+      "right_zone_mm": 199.43833333333336,
+      "left_close_points": 9.666666666666666,
+      "center_close_points": 26.833333333333332,
+      "right_close_points": 16.0,
+      "near_points": 51.5,
+      "mid_points": 1.0,
+      "far_points": 0.5
     },
     "errors": {
       "bme688_error": null,
@@ -68,38 +69,75 @@
     }
   },
   "interpreted_state": {
-    "presence_activity": "active presence",
-    "presence_count": "two people",
+    "presence_activity": "still presence",
+    "presence_count": "one person",
     "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, close to the sensor plane",
     "sen0628_figure_side": "middle",
-    "presence_location": "in the near field, spread across the full field of view",
-    "lighting_condition": "bright",
-    "atmospheric_condition": "neutral indoor air",
+    "presence_location": "very close to the sensing system, spread across the full field of view",
+    "lighting_condition": "moderate light",
+    "atmospheric_condition": "cool dry air",
     "spatial_impression": "shallow and fragmented",
-    "abstract_background": "abstract interior backdrop interpreted from sensor data, washed pale planes with generous openness and faint bloom, soft neutral texture barely present in the background, desaturated tones, muted color, large open areas"
+    "abstract_background": "abstract interior backdrop interpreted from sensor data, restrained diffused tones with pale breathing room, clear separation with dry pale textures kept light and minimal, desaturated tones, muted color, large open areas",
+    "figure_count": 1,
+    "placement_summary": "one person near the center",
+    "placement_prompt": "show exactly one human figure on the center of the room, near the front of the room",
+    "depth_band": "front",
+    "primary_zone": "center",
+    "secondary_zone": "right",
+    "active_zones": [
+      "center",
+      "right",
+      "left"
+    ],
+    "layout_mode": "single",
+    "spatial_certainty": "multi-zone certainty reduced",
+    "figure_variation_modifiers": [
+      "same room retained",
+      "background structure held",
+      "camera view kept similar",
+      "single larger foreground figure",
+      "one centered or slightly off-center figure emphasis",
+      "foreground weighting increased"
+    ]
   },
   "live_inference_lines": [
-    "current readings suggest activity near the sensor field",
-    "SEN0628 spatial reading: SEN0628 suggests occupancy spread across the room, close to the sensor plane",
-    "figure side estimate: middle",
-    "position estimate: in the near field, spread across the full field of view",
-    "lighting appears bright",
-    "air conditions seem neutral",
-    "spatial impression: shallow and fragmented"
+    "background held stable",
+    "occupancy held steady",
+    "single figure favored",
+    "central trace dominant",
+    "near-field signal stronger",
+    "multi-zone certainty reduced",
+    "ambient brightness stable",
+    "cool dry bias retained"
   ],
-  "image_prompt": "a believable interior room shaped by sensed human activity, two people, in the near field, spread across the full field of view, the room feels shallow and fragmented, lighting reads as bright, air feels like neutral indoor air, architectural backdrop remains minimal and ambiguous, abstract interior backdrop interpreted from sensor data, washed pale planes with generous openness and faint bloom, soft neutral texture barely present in the background, desaturated tones, muted color, large open areas, background inspired by liminal void imagery, vast dark backdrop, sparse floor plane, muted low-saturation gradients, faint atmospheric haze, smooth abstract curved forms, minimal detail, quiet composition with generous open areas and strong figure readability, the room must visibly contain human occupants, photorealistic interior surfaces, plausible materials, abstract but physically believable space, active presence, two people, in the near field, spread across the full field of view, SEN0628 suggests occupancy spread across the room, close to the sensor plane, SEN0628 places the figure on the middle side of the room, LD2410C detects a target in the room, so there is a human figure in the image and it must not be an empty room, the figure must be clearly visible and immediately readable as a person, LD2410C should determine whether one or two people are shown, SEN0628 should determine where those people stand within the room, make the people clearly readable as occupants rather than implied traces, human presence can appear only as the inferred number of coherent scene elements, not repeated beyond that count, at least one full human figure must be visible in the final image, single interior scene, cinematic photography, photorealistic image, the room should visibly contain the detected occupants, keep the background secondary so the people remain legible, realistic human scale, natural posture, clear separation between each person, medium-long shot, full or three-quarter bodies visible, subjects not cropped out, human figures should be immediately noticeable at first glance, fine surface detail, restrained background detail, avoid ambiguous forms when people are present, strong figure readability, people placed against large open background areas only when targets are detected, background palette should stay muted and desaturated, with charcoal, dusty blue, faded teal, ash gray, and faint dusty rose, real-world lighting, natural shadows, subtle atmospheric depth, realistic lens perspective, dreamlike only in interpretation, not in rendering style, avoid painterly, graphic, or overtly surreal aesthetics, no text, no words, no letters, no signage, no typography, no collage, no diptych, no triptych, no split panels, no storyboard, no poster layout, no watermark, no caption, no user interface, no document look, no empty room, no empty scene, no furniture-only composition, no hidden person, no cropped-out person, no tiny distant person, no obscured face, no silhouette-only figure",
-  "state_signature": "{\"atmospheric_condition\": \"neutral indoor air\", \"lighting_condition\": \"bright\", \"presence_activity\": \"active presence\", \"presence_count\": \"two people\", \"presence_location\": \"in the near field, spread across the full field of view\", \"sen0628_figure_side\": \"middle\", \"sen0628_spatial_estimate\": \"SEN0628 suggests occupancy spread across the room, close to the sensor plane\", \"spatial_impression\": \"shallow and fragmented\"}",
-  "stable_signature": "{\"atmospheric_condition\": \"neutral indoor air\", \"lighting_condition\": \"bright\", \"presence_activity\": \"active presence\", \"presence_count\": \"two people\", \"presence_location\": \"in the near field, spread across the full field of view\", \"sen0628_figure_side\": \"middle\", \"sen0628_spatial_estimate\": \"SEN0628 suggests occupancy spread across the room, close to the sensor plane\", \"spatial_impression\": \"shallow and fragmented\"}",
-  "last_meaningful_change_time": 1774473481.559156,
-  "last_text_update_time": 1774473484.5661228,
-  "last_image_generation_time": 1774473476.5011876,
-  "current_image_path": "C:\\Users\\lucas\\Documents\\IMCA322\\Prototype1\\generated_images\\sensor_inference_20260325_171759.png",
+  "interpretation_source": "rule_based",
+  "agent_preview": null,
+  "agent_notes": [],
+  "image_prompt": "human presence is being inferred as still presence, require one visible human figure as the occupancy revision, near the middle zone, leaning nearer to the foreground, the room must read as visibly occupied, the figures must be noticeable at first glance, render adult human bodies clearly enough to read immediately, not just traces, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, allow some silhouette ambiguity without removing the body presence, vary the figures more than the room itself, treat human figures as the primary changing element, allow variation in lateral placement, depth placement, spacing, scale, clustering, and separation while keeping the room broadly stable, same room retained, background structure held, camera view kept similar, single larger foreground figure, one centered or slightly off-center figure emphasis, foreground weighting increased, photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics, preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element, single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details",
+  "prompt_sections": {
+    "base_scene_prompt": "photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics",
+    "background_continuity_directive": "preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element",
+    "people_directive": "human presence is being inferred as still presence, require one visible human figure as the occupancy revision, near the middle zone, leaning nearer to the foreground, the room must read as visibly occupied, the figures must be noticeable at first glance, render adult human bodies clearly enough to read immediately, not just traces, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, allow some silhouette ambiguity without removing the body presence, vary the figures more than the room itself",
+    "figure_variation_directive": "treat human figures as the primary changing element, allow variation in lateral placement, depth placement, spacing, scale, clustering, and separation while keeping the room broadly stable, same room retained, background structure held, camera view kept similar, single larger foreground figure, one centered or slightly off-center figure emphasis, foreground weighting increased",
+    "composition_directive": "single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details",
+    "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, changed architecture, changed camera angle, new furniture"
+  },
+  "state_signature": "{\"depth_bucket\": \"front\", \"figure_count\": 1, \"lateral_bucket\": \"center\", \"presence_activity\": \"still presence\", \"presence_count\": \"one person\"}",
+  "stable_signature": "{\"depth_bucket\": \"front\", \"figure_count\": 1, \"lateral_bucket\": \"center\", \"presence_activity\": \"still presence\", \"presence_count\": \"one person\"}",
+  "last_meaningful_change_time": 1775157078.5611587,
+  "last_text_update_time": 1775157143.9441931,
+  "last_image_generation_time": 1775157137.4895175,
+  "current_image_path": "C:\\Users\\lucas\\Documents\\IMCA322\\Prototype1\\generated_images\\2026-04-02_15-12-17_seed-23_presence-one-person_middle.png",
+  "current_image_seed": 23,
+  "seed_test_mode": false,
   "last_image_error": null,
-  "seconds_since_meaningful_change": 3.01,
+  "last_openai_error": "bad character range \\\\-/ at position 13",
+  "seconds_since_meaningful_change": 65.38,
   "change_metrics": {
-    "light_percent": 71.33333333333333,
-    "temperature_c": 21.61,
-    "humidity_pct": 18.733333333333334,
-    "detection_distance_cm": 97.83333333333333
-  }
+    "light_percent": 42.86666666666667,
+    "temperature_c": 20.903333333333332,
+    "humidity_pct": 27.776666666666667,
+    "detection_distance_cm": 35.833333333333336
+  },
+  "image_generation_in_progress": false
 }
