@@ -1,0 +1,570 @@
+generation_timestamp: 2026-04-04T00:22:44
+seed: 23
+seed_test_mode: False
+
+raw_sensor_frames:
+[
+  {
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 37.96,
+      "temperature_c": 19.61,
+      "pressure_hpa": 1016.38,
+      "raw_temperature_c": 21.61
+    },
+    "seq": 33,
+    "sen0628": {
+      "max_mm": 5,
+      "mean_mm": 2.04,
+      "center_close_points": 13,
+      "center_mm": 0,
+      "right_close_points": 3,
+      "valid_points": 26,
+      "min_mm": 1,
+      "right_zone_mm": 2.67,
+      "left_zone_mm": 1.7,
+      "near_points": 26,
+      "far_points": 0,
+      "mid_points": 0,
+      "center_zone_mm": 2.15,
+      "left_close_points": 10
+    },
+    "uptime_ms": 77550,
+    "type": "sensor_frame",
+    "ld2410c_back": {
+      "payload_length": 13,
+      "moving_distance_cm": 404,
+      "stationary_energy": 7,
+      "detection_distance_cm": 413,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 0,
+      "target_state_raw": 0,
+      "stationary_distance_cm": 404,
+      "target_state": "NO_TARGET"
+    },
+    "ld2410c_front": {
+      "payload_length": 13,
+      "moving_distance_cm": 534,
+      "stationary_energy": 27,
+      "detection_distance_cm": 550,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 561,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "usb_microphone": {
+      "available": true,
+      "device_name": "Microphone (HyperX QuadCast S)",
+      "device_index": 1,
+      "sample_rate_hz": 44100.0,
+      "rms": 1e-05,
+      "peak": 3.1e-05,
+      "noise_floor_rms": 1e-05,
+      "relative_rms": 0.0,
+      "relative_db": 0.142,
+      "activity_score": 0.0,
+      "active_fraction": 0.0
+    }
+  },
+  {
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 37.93,
+      "temperature_c": 19.62,
+      "pressure_hpa": 1016.38,
+      "raw_temperature_c": 21.62
+    },
+    "seq": 34,
+    "sen0628": {
+      "max_mm": 6,
+      "mean_mm": 2.43,
+      "center_close_points": 12,
+      "center_mm": 0,
+      "right_close_points": 2,
+      "valid_points": 21,
+      "min_mm": 1,
+      "right_zone_mm": 1.5,
+      "left_zone_mm": 2.57,
+      "near_points": 21,
+      "far_points": 0,
+      "mid_points": 0,
+      "center_zone_mm": 2.5,
+      "left_close_points": 7
+    },
+    "uptime_ms": 79550,
+    "type": "sensor_frame",
+    "ld2410c_back": {
+      "payload_length": 13,
+      "moving_distance_cm": 404,
+      "stationary_energy": 17,
+      "detection_distance_cm": 413,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 0,
+      "target_state_raw": 0,
+      "stationary_distance_cm": 404,
+      "target_state": "NO_TARGET"
+    },
+    "ld2410c_front": {
+      "payload_length": 13,
+      "moving_distance_cm": 534,
+      "stationary_energy": 26,
+      "detection_distance_cm": 533,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 548,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "usb_microphone": {
+      "available": true,
+      "device_name": "Microphone (HyperX QuadCast S)",
+      "device_index": 1,
+      "sample_rate_hz": 44100.0,
+      "rms": 1e-05,
+      "peak": 3.1e-05,
+      "noise_floor_rms": 1e-05,
+      "relative_rms": 0.0,
+      "relative_db": 0.129,
+      "activity_score": 0.0,
+      "active_fraction": 0.0
+    }
+  },
+  {
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 37.94,
+      "temperature_c": 19.62,
+      "pressure_hpa": 1016.42,
+      "raw_temperature_c": 21.62
+    },
+    "seq": 35,
+    "sen0628": {
+      "max_mm": 899,
+      "mean_mm": 47.41,
+      "center_close_points": 14,
+      "center_mm": 0,
+      "right_close_points": 5,
+      "valid_points": 27,
+      "min_mm": 1,
+      "right_zone_mm": 246.2,
+      "left_zone_mm": 2.5,
+      "near_points": 27,
+      "far_points": 0,
+      "mid_points": 0,
+      "center_zone_mm": 2.07,
+      "left_close_points": 8
+    },
+    "uptime_ms": 81550,
+    "type": "sensor_frame",
+    "ld2410c_back": {
+      "payload_length": 13,
+      "moving_distance_cm": 404,
+      "stationary_energy": 26,
+      "detection_distance_cm": 413,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 0,
+      "target_state_raw": 0,
+      "stationary_distance_cm": 404,
+      "target_state": "NO_TARGET"
+    },
+    "ld2410c_front": {
+      "payload_length": 13,
+      "moving_distance_cm": 534,
+      "stationary_energy": 41,
+      "detection_distance_cm": 525,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 534,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "usb_microphone": {
+      "available": true,
+      "device_name": "Microphone (HyperX QuadCast S)",
+      "device_index": 1,
+      "sample_rate_hz": 44100.0,
+      "rms": 1e-05,
+      "peak": 3.1e-05,
+      "noise_floor_rms": 1e-05,
+      "relative_rms": 0.0,
+      "relative_db": 0.103,
+      "activity_score": 0.0,
+      "active_fraction": 0.0
+    }
+  },
+  {
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 37.93,
+      "temperature_c": 19.62,
+      "pressure_hpa": 1016.38,
+      "raw_temperature_c": 21.62
+    },
+    "seq": 36,
+    "sen0628": {
+      "max_mm": 1680,
+      "mean_mm": 74.94,
+      "center_close_points": 13,
+      "center_mm": 0,
+      "right_close_points": 6,
+      "valid_points": 31,
+      "min_mm": 1,
+      "right_zone_mm": 324.14,
+      "left_zone_mm": 2.0,
+      "near_points": 30,
+      "far_points": 0,
+      "mid_points": 1,
+      "center_zone_mm": 2.46,
+      "left_close_points": 11
+    },
+    "uptime_ms": 83550,
+    "type": "sensor_frame",
+    "ld2410c_back": {
+      "payload_length": 13,
+      "moving_distance_cm": 404,
+      "stationary_energy": 18,
+      "detection_distance_cm": 413,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 0,
+      "target_state_raw": 0,
+      "stationary_distance_cm": 404,
+      "target_state": "NO_TARGET"
+    },
+    "ld2410c_front": {
+      "payload_length": 13,
+      "moving_distance_cm": 534,
+      "stationary_energy": 31,
+      "detection_distance_cm": 518,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 534,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "usb_microphone": {
+      "available": true,
+      "device_name": "Microphone (HyperX QuadCast S)",
+      "device_index": 1,
+      "sample_rate_hz": 44100.0,
+      "rms": 1e-05,
+      "peak": 3.1e-05,
+      "noise_floor_rms": 1e-05,
+      "relative_rms": 0.0,
+      "relative_db": 0.113,
+      "activity_score": 0.0,
+      "active_fraction": 0.0
+    }
+  },
+  {
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 37.94,
+      "temperature_c": 19.61,
+      "pressure_hpa": 1016.38,
+      "raw_temperature_c": 21.61
+    },
+    "seq": 37,
+    "sen0628": {
+      "max_mm": 5,
+      "mean_mm": 2.68,
+      "center_close_points": 9,
+      "center_mm": 0,
+      "right_close_points": 3,
+      "valid_points": 22,
+      "min_mm": 1,
+      "right_zone_mm": 2.67,
+      "left_zone_mm": 2.4,
+      "near_points": 22,
+      "far_points": 0,
+      "mid_points": 0,
+      "center_zone_mm": 3.0,
+      "left_close_points": 10
+    },
+    "uptime_ms": 85550,
+    "type": "sensor_frame",
+    "ld2410c_back": {
+      "payload_length": 13,
+      "moving_distance_cm": 404,
+      "stationary_energy": 9,
+      "detection_distance_cm": 413,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 0,
+      "target_state_raw": 0,
+      "stationary_distance_cm": 404,
+      "target_state": "NO_TARGET"
+    },
+    "ld2410c_front": {
+      "payload_length": 13,
+      "moving_distance_cm": 534,
+      "stationary_energy": 20,
+      "detection_distance_cm": 518,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 534,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "usb_microphone": {
+      "available": true,
+      "device_name": "Microphone (HyperX QuadCast S)",
+      "device_index": 1,
+      "sample_rate_hz": 44100.0,
+      "rms": 1e-05,
+      "peak": 3.1e-05,
+      "noise_floor_rms": 1e-05,
+      "relative_rms": 0.0,
+      "relative_db": 0.11,
+      "activity_score": 0.0,
+      "active_fraction": 0.0
+    }
+  },
+  {
+    "bme688": {
+      "gas_ohms": 12917167,
+      "humidity_pct": 37.93,
+      "temperature_c": 19.62,
+      "pressure_hpa": 1016.38,
+      "raw_temperature_c": 21.62
+    },
+    "seq": 38,
+    "sen0628": {
+      "max_mm": 6,
+      "mean_mm": 2.52,
+      "center_close_points": 11,
+      "center_mm": 0,
+      "right_close_points": 3,
+      "valid_points": 23,
+      "min_mm": 1,
+      "right_zone_mm": 3.0,
+      "left_zone_mm": 2.67,
+      "near_points": 23,
+      "far_points": 0,
+      "mid_points": 0,
+      "center_zone_mm": 2.27,
+      "left_close_points": 9
+    },
+    "uptime_ms": 87550,
+    "type": "sensor_frame",
+    "ld2410c_back": {
+      "payload_length": 13,
+      "moving_distance_cm": 404,
+      "stationary_energy": 8,
+      "detection_distance_cm": 413,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 0,
+      "target_state_raw": 0,
+      "stationary_distance_cm": 404,
+      "target_state": "NO_TARGET"
+    },
+    "ld2410c_front": {
+      "payload_length": 13,
+      "moving_distance_cm": 534,
+      "stationary_energy": 28,
+      "detection_distance_cm": 545,
+      "moving_energy": 0,
+      "frame_type": 2,
+      "out": 1,
+      "target_state_raw": 2,
+      "stationary_distance_cm": 568,
+      "target_state": "STATIONARY_TARGET"
+    },
+    "usb_microphone": {
+      "available": true,
+      "device_name": "Microphone (HyperX QuadCast S)",
+      "device_index": 1,
+      "sample_rate_hz": 44100.0,
+      "rms": 1e-05,
+      "peak": 3.1e-05,
+      "noise_floor_rms": 1e-05,
+      "relative_rms": 0.0,
+      "relative_db": 0.118,
+      "activity_score": 0.0,
+      "active_fraction": 0.0
+    }
+  }
+]
+
+smoothed_sensor_values:
+{
+  "frame_count": 6,
+  "seq_range": [
+    33,
+    38
+  ],
+  "uptime_ms": 87550,
+  "bme688": {
+    "temperature_c": 19.616666666666667,
+    "raw_temperature_c": 21.616666666666664,
+    "humidity_pct": 37.93833333333333,
+    "pressure_hpa": 1016.3866666666667,
+    "gas_ohms": 12917167.0
+  },
+  "ld2410c_front": {
+    "out": 1,
+    "target_state": "STATIONARY_TARGET",
+    "target_state_raw": 2,
+    "moving_distance_cm": 534.0,
+    "moving_energy": 0.0,
+    "stationary_distance_cm": 546.5,
+    "stationary_energy": 28.833333333333332,
+    "detection_distance_cm": 531.5,
+    "status": null,
+    "state_history": [
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET"
+    ]
+  },
+  "ld2410c_back": {
+    "out": 0,
+    "target_state": "NO_TARGET",
+    "target_state_raw": 0,
+    "moving_distance_cm": 404.0,
+    "moving_energy": 0.0,
+    "stationary_distance_cm": 404.0,
+    "stationary_energy": 14.166666666666666,
+    "detection_distance_cm": 413.0,
+    "status": null,
+    "state_history": [
+      "NO_TARGET",
+      "NO_TARGET",
+      "NO_TARGET",
+      "NO_TARGET",
+      "NO_TARGET",
+      "NO_TARGET"
+    ]
+  },
+  "ld2410c": {
+    "out": 1,
+    "target_state": "STATIONARY_TARGET",
+    "target_state_raw": 2,
+    "moving_distance_cm": 469.0,
+    "moving_energy": 0.0,
+    "stationary_distance_cm": 475.25,
+    "stationary_energy": 28.833333333333332,
+    "detection_distance_cm": 472.25,
+    "status": null,
+    "state_history": [
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "STATIONARY_TARGET",
+      "NO_TARGET",
+      "NO_TARGET",
+      "NO_TARGET",
+      "NO_TARGET",
+      "NO_TARGET",
+      "NO_TARGET"
+    ]
+  },
+  "sen0628": {
+    "center_mm": 0.0,
+    "min_mm": 1.0,
+    "max_mm": 433.5,
+    "mean_mm": 22.00333333333333,
+    "valid_points": 25.0,
+    "left_zone_mm": 2.3066666666666666,
+    "center_zone_mm": 2.408333333333333,
+    "right_zone_mm": 96.69666666666666,
+    "left_close_points": 9.166666666666666,
+    "center_close_points": 12.0,
+    "right_close_points": 3.6666666666666665,
+    "near_points": 24.833333333333332,
+    "mid_points": 0.16666666666666666,
+    "far_points": 0.0
+  },
+  "usb_microphone": {
+    "available": true,
+    "device_name": "Microphone (HyperX QuadCast S)",
+    "device_index": 1,
+    "sample_rate_hz": 44100.0,
+    "rms": 1e-05,
+    "peak": 3.1e-05,
+    "noise_floor_rms": 1e-05,
+    "relative_rms": 0.0,
+    "relative_db": 0.11916666666666666,
+    "activity_score": 0.0,
+    "active_fraction": 0.0
+  },
+  "errors": {
+    "bme688_error": null,
+    "sen0628_error": null
+  }
+}
+
+interpreted_descriptors:
+{
+  "presence_activity": "still presence",
+  "presence_count": "one person",
+  "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, close to the sensor plane",
+  "sen0628_figure_side": "middle",
+  "presence_location": "front-center, slightly left of center",
+  "lighting_condition": "lighting unavailable",
+  "atmospheric_condition": "cool dry air",
+  "spatial_impression": "shallow and fragmented",
+  "abstract_background": "abstract interior backdrop interpreted from sensor data, minimal ambiguous tonal fields with open depth, clear separation with dry pale textures kept light and minimal, desaturated tones, muted color, large open areas",
+  "audio_activity": "very quiet room",
+  "audio_device": "Microphone (HyperX QuadCast S)",
+  "audio_relative_db": 0.11916666666666666,
+  "front_presence": "still presence",
+  "back_presence": "no presence",
+  "front_strength": 50.8,
+  "back_strength": 4.2,
+  "active_ld_zones": [
+    "front"
+  ],
+  "dominant_ld_zone": "front",
+  "figure_count": 1,
+  "placement_summary": "single stationary figure favored near front plane; room continuity prese",
+  "placement_prompt": "show one human figure in the front-center foreground, slightly left biased, same room retained",
+  "depth_band": "front",
+  "primary_zone": "front",
+  "secondary_zone": "center",
+  "active_zones": [
+    "front",
+    "center"
+  ],
+  "layout_mode": "single",
+  "spatial_certainty": "moderate",
+  "figure_variation_modifiers": [
+    "same room retained",
+    "background structure held",
+    "camera view kept similar",
+    "single larger foreground figure",
+    "figure grouping shifted toward front",
+    "foreground weighting increased"
+  ]
+}
+
+prompt_sections:
+{
+  "base_scene_prompt": "photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics",
+  "background_continuity_directive": "preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element",
+  "people_directive": "human presence is being inferred as still presence, require one visible human figure as the occupancy revision, toward the front zone, leaning nearer to the foreground, the room must read as visibly occupied, the figures must be noticeable at first glance, render adult human bodies clearly enough to read immediately, not just traces, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, allow some silhouette ambiguity without removing the body presence, treat the audio as weak evidence for additional occupants, vary the figures more than the room itself",
+  "figure_variation_directive": "treat human figures as the primary changing element, allow variation in lateral placement, depth placement, spacing, scale, clustering, and separation while keeping the room broadly stable, same room retained, background structure held, camera view kept similar, single larger foreground figure, figure grouping shifted toward front, foreground weighting increased",
+  "composition_directive": "single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details",
+  "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, changed architecture, changed camera angle, new furniture"
+}
+
+final_prompt:
+human presence is being inferred as still presence, require one visible human figure as the occupancy revision, toward the front zone, leaning nearer to the foreground, the room must read as visibly occupied, the figures must be noticeable at first glance, render adult human bodies clearly enough to read immediately, not just traces, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, allow some silhouette ambiguity without removing the body presence, treat the audio as weak evidence for additional occupants, vary the figures more than the room itself, treat human figures as the primary changing element, allow variation in lateral placement, depth placement, spacing, scale, clustering, and separation while keeping the room broadly stable, same room retained, background structure held, camera view kept similar, single larger foreground figure, figure grouping shifted toward front, foreground weighting increased, photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics, preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element, single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details, single larger foreground figure, front-weighted placement, slight left bias, background held stable
+
+negative_prompt:
+text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, changed architecture, changed camera angle, new furniture

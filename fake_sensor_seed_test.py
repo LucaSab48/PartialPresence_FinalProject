@@ -30,7 +30,6 @@ FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
                 "pressure_hpa": 1012.4,
                 "gas_ohms": 18500.0,
             },
-            "light": {"raw": 900, "percent": 18.0},
             "ld2410c": {
                 "out": 0,
                 "target_state": "NO_TARGET",
@@ -61,7 +60,7 @@ FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
         },
     },
     "one-person-left": {
-        "description": "One person standing toward the left side in moderate light.",
+        "description": "One person standing deeper toward the back of the room.",
         "frame": {
             "bme688": {
                 "temperature_c": 22.8,
@@ -70,7 +69,6 @@ FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
                 "pressure_hpa": 1011.7,
                 "gas_ohms": 16200.0,
             },
-            "light": {"raw": 2140, "percent": 42.0},
             "ld2410c": {
                 "out": 1,
                 "target_state": "STATIONARY_TARGET",
@@ -101,7 +99,7 @@ FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
         },
     },
     "one-person-right-moving": {
-        "description": "One active person moving on the right side.",
+        "description": "One active person moving near the front of the room.",
         "frame": {
             "bme688": {
                 "temperature_c": 23.7,
@@ -110,7 +108,6 @@ FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
                 "pressure_hpa": 1010.8,
                 "gas_ohms": 14800.0,
             },
-            "light": {"raw": 2780, "percent": 58.0},
             "ld2410c": {
                 "out": 1,
                 "target_state": "MOVING_TARGET",
@@ -141,7 +138,7 @@ FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
         },
     },
     "two-people-middle": {
-        "description": "Two people inferred around the middle of the room.",
+        "description": "Two people inferred between the front and back zones.",
         "frame": {
             "bme688": {
                 "temperature_c": 24.6,
@@ -150,7 +147,6 @@ FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
                 "pressure_hpa": 1011.2,
                 "gas_ohms": 13900.0,
             },
-            "light": {"raw": 2460, "percent": 50.0},
             "ld2410c": {
                 "out": 1,
                 "target_state": "MOVING_AND_STATIONARY",
@@ -226,14 +222,11 @@ def parse_args() -> argparse.Namespace:
 
 def build_fake_frame(preset_name: str, seq: int) -> dict[str, Any]:
     template = deepcopy(FAKE_SENSOR_PRESETS[preset_name]["frame"])
-    light = template["light"]
     bme = template["bme688"]
     ld = template["ld2410c"]
     sen = template["sen0628"]
 
     # Add slight deterministic jitter so the smoothing path is exercised realistically.
-    light["raw"] += (seq % 3) - 1
-    light["percent"] = round(light["percent"] + (0.4 * ((seq % 3) - 1)), 2)
     bme["temperature_c"] = round(bme["temperature_c"] + (0.1 * ((seq % 2) - 0.5)), 2)
     bme["raw_temperature_c"] = round(bme["raw_temperature_c"] + (0.1 * ((seq % 2) - 0.5)), 2)
     bme["humidity_pct"] = round(bme["humidity_pct"] + (0.5 * ((seq % 3) - 1)), 2)
@@ -251,13 +244,39 @@ def build_fake_frame(preset_name: str, seq: int) -> dict[str, Any]:
         if sen.get(zone_key) is not None:
             sen[zone_key] += (seq % 3) - 1
 
+    ld_front = {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": None,
+        "moving_energy": 0,
+        "stationary_distance_cm": None,
+        "stationary_energy": 0,
+        "detection_distance_cm": None,
+        "status": "OK",
+    }
+    ld_back = deepcopy(ld_front)
+
+    if preset_name == "one-person-right-moving":
+        ld_front = deepcopy(ld)
+    elif preset_name == "one-person-left":
+        ld_back = deepcopy(ld)
+    elif preset_name == "two-people-middle":
+        ld_front = deepcopy(ld)
+        ld_back = deepcopy(ld)
+        ld_back["moving_distance_cm"] = 214
+        ld_back["stationary_distance_cm"] = 232
+        ld_back["detection_distance_cm"] = 224
+        ld_back["moving_energy"] = max(40, (ld.get("moving_energy") or 0) - 12)
+        ld_back["stationary_energy"] = max(28, (ld.get("stationary_energy") or 0) - 8)
+
     return {
         "type": "sensor_frame",
         "seq": seq,
         "uptime_ms": seq * 250,
         "bme688": bme,
-        "light": light,
-        "ld2410c": ld,
+        "ld2410c_front": ld_front,
+        "ld2410c_back": ld_back,
         "sen0628": sen,
     }
 

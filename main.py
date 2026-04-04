@@ -1,4 +1,4 @@
-from machine import ADC, I2C, Pin, UART
+from machine import I2C, Pin, UART
 import time
 
 try:
@@ -15,15 +15,24 @@ BME_ADDRS = (0x76, 0x77)
 BME_EXPECTED_CHIP_ID = 0x61
 BME_TEMPERATURE_OFFSET_C = 2.0
 
-LIGHT_ADC_PIN = 26
-ADC_MAX = 65535
-
-LD_UART_ID = 0
 LD_UART_BAUDRATE = 256000
-LD_UART_TX_PIN = 0
-LD_UART_RX_PIN = 1
-LD_OUT_PIN = 2
 LD_MAX_BUFFER_SIZE = 512
+LD_SENSOR_CONFIGS = (
+    {
+        "name": "ld2410c_front",
+        "uart_id": 0,
+        "tx_pin": 0,
+        "rx_pin": 1,
+        "out_pin": 2,
+    },
+    {
+        "name": "ld2410c_back",
+        "uart_id": 1,
+        "tx_pin": 8,
+        "rx_pin": 9,
+        "out_pin": 3,
+    },
+)
 
 SEN_I2C_ID = 1
 SEN_SDA_PIN = 6
@@ -541,15 +550,6 @@ def init_sen0628():
     return sensor
 
 
-def read_light(sensor):
-    raw = sensor.read_u16()
-    brightness_percent = 100.0 - ((raw / ADC_MAX) * 100.0)
-    return {
-        "raw": raw,
-        "percent": safe_round(brightness_percent, 1),
-    }
-
-
 def read_sen0628(sensor):
     values = sensor.get_all_data()
     valid_values = [value for value in values if 0 < value < 4000]
@@ -615,34 +615,42 @@ def print_json_packet(packet):
 
 def main():
     print("PICO_READY")
-    print(
-        "CONFIG:BME688=I2C{},GP{}/GP{};SEN0628=I2C{},GP{}/GP{};LIGHT=GP{};LD2410C=UART{},TX=GP{},RX=GP{},OUT=GP{}".format(
-            BME_I2C_ID,
-            BME_SDA_PIN,
-            BME_SCL_PIN,
-            SEN_I2C_ID,
-            SEN_SDA_PIN,
-            SEN_SCL_PIN,
-            LIGHT_ADC_PIN,
-            LD_UART_ID,
-            LD_UART_TX_PIN,
-            LD_UART_RX_PIN,
-            LD_OUT_PIN,
+    config_message = "CONFIG:BME688=I2C{},GP{}/GP{};SEN0628=I2C{},GP{}/GP{}".format(
+        BME_I2C_ID,
+        BME_SDA_PIN,
+        BME_SCL_PIN,
+        SEN_I2C_ID,
+        SEN_SDA_PIN,
+        SEN_SCL_PIN,
+    )
+    for config in LD_SENSOR_CONFIGS:
+        config_message += ";{}=UART{},TX=GP{},RX=GP{},OUT=GP{}".format(
+            config["name"].upper(),
+            config["uart_id"],
+            config["tx_pin"],
+            config["rx_pin"],
+            config["out_pin"],
         )
-    )
+    print(config_message)
 
-    light_sensor = ADC(Pin(LIGHT_ADC_PIN))
-    ld_uart = UART(
-        LD_UART_ID,
-        baudrate=LD_UART_BAUDRATE,
-        tx=Pin(LD_UART_TX_PIN),
-        rx=Pin(LD_UART_RX_PIN),
-        bits=8,
-        parity=None,
-        stop=1,
-        timeout=20,
-    )
-    ld_reader = LD2410CReader(ld_uart, Pin(LD_OUT_PIN, Pin.IN))
+    ld_readers = []
+    for config in LD_SENSOR_CONFIGS:
+        ld_uart = UART(
+            config["uart_id"],
+            baudrate=LD_UART_BAUDRATE,
+            tx=Pin(config["tx_pin"]),
+            rx=Pin(config["rx_pin"]),
+            bits=8,
+            parity=None,
+            stop=1,
+            timeout=20,
+        )
+        ld_readers.append(
+            (
+                config["name"],
+                LD2410CReader(ld_uart, Pin(config["out_pin"], Pin.IN)),
+            )
+        )
 
     bme_sensor = None
     sen_sensor = None
@@ -650,7 +658,8 @@ def main():
     last_report = time.ticks_ms()
 
     while True:
-        ld_reader.poll()
+        for _, ld_reader in ld_readers:
+            ld_reader.poll()
         now = time.ticks_ms()
 
         if time.ticks_diff(now, last_report) < REPORT_INTERVAL_MS:
@@ -676,8 +685,8 @@ def main():
                 packet["bme688_error"] = str(exc)
                 bme_sensor = None
 
-        packet["light"] = read_light(light_sensor)
-        packet["ld2410c"] = ld_reader.snapshot()
+        for sensor_name, ld_reader in ld_readers:
+            packet[sensor_name] = ld_reader.snapshot()
 
         if sen_sensor is None:
             try:

@@ -20,6 +20,10 @@ from generate_from_pico import (
     parse_sensor_line,
     smooth_frames,
 )
+from usb_microphone import (
+    attach_microphone_snapshot,
+    build_microphone_monitor_from_env,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,34 +53,41 @@ def main() -> None:
     args = parse_args()
     output_path = Path(args.output)
     frame_buffer: deque[dict[str, Any]] = deque(maxlen=SMOOTHING_WINDOW_SIZE * 4)
+    microphone_monitor = build_microphone_monitor_from_env()
+    microphone_monitor.start()
 
     print(f"Opening {args.port} at {BAUDRATE} baud")
     print("Leave the room empty while recording this baseline.")
     print(f"Waiting up to {SERIAL_STARTUP_SECONDS} seconds for sensor frames...")
+    print(f"USB microphone: {microphone_monitor.status_text}")
 
-    with serial.Serial(args.port, BAUDRATE, timeout=SERIAL_TIMEOUT_SECONDS) as ser:
-        startup_deadline = time.time() + SERIAL_STARTUP_SECONDS
-        while time.time() < startup_deadline and len(frame_buffer) < MIN_FRAMES_FOR_PROCESSING:
-            raw_line = ser.readline().decode("utf-8", errors="ignore").strip()
-            if not raw_line:
-                continue
-            frame = parse_sensor_line(raw_line)
-            if frame is not None:
-                frame_buffer.append(frame)
+    try:
+        with serial.Serial(args.port, BAUDRATE, timeout=SERIAL_TIMEOUT_SECONDS) as ser:
+            startup_deadline = time.time() + SERIAL_STARTUP_SECONDS
+            while time.time() < startup_deadline and len(frame_buffer) < MIN_FRAMES_FOR_PROCESSING:
+                raw_line = ser.readline().decode("utf-8", errors="ignore").strip()
+                if not raw_line:
+                    continue
+                frame = parse_sensor_line(raw_line)
+                if frame is not None:
+                    frame_buffer.append(attach_microphone_snapshot(frame, microphone_monitor))
 
-        if len(frame_buffer) < MIN_FRAMES_FOR_PROCESSING:
-            raise RuntimeError("No valid sensor frames received from the Pico.")
+            if len(frame_buffer) < MIN_FRAMES_FOR_PROCESSING:
+                raise RuntimeError("No valid sensor frames received from the Pico.")
 
-        print(f"Recording empty-room data for {args.seconds:.1f} seconds...")
-        record_deadline = time.time() + max(1.0, args.seconds)
-        while time.time() < record_deadline:
-            raw_line = ser.readline().decode("utf-8", errors="ignore").strip()
-            if not raw_line:
-                continue
-            frame = parse_sensor_line(raw_line)
-            if frame is not None:
-                frame_buffer.append(frame)
-                print(f"[BASELINE_FRAME] seq={frame.get('seq')} uptime_ms={frame.get('uptime_ms')}")
+            print(f"Recording empty-room data for {args.seconds:.1f} seconds...")
+            record_deadline = time.time() + max(1.0, args.seconds)
+            while time.time() < record_deadline:
+                raw_line = ser.readline().decode("utf-8", errors="ignore").strip()
+                if not raw_line:
+                    continue
+                frame = parse_sensor_line(raw_line)
+                if frame is not None:
+                    augmented_frame = attach_microphone_snapshot(frame, microphone_monitor)
+                    frame_buffer.append(augmented_frame)
+                    print(f"[BASELINE_FRAME] seq={frame.get('seq')} uptime_ms={frame.get('uptime_ms')}")
+    finally:
+        microphone_monitor.stop()
 
     raw_frames = list(frame_buffer)
     smoothed = smooth_frames(raw_frames)

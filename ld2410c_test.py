@@ -1,11 +1,23 @@
 from machine import Pin, UART
 import time
 
-UART_ID = 0
 UART_BAUDRATE = 256000
-UART_TX_PIN = 0
-UART_RX_PIN = 1
-OUT_PIN = 2
+SENSORS = (
+    {
+        "name": "LD2410C_1",
+        "uart_id": 0,
+        "tx_pin": 0,
+        "rx_pin": 1,
+        "out_pin": 2,
+    },
+    {
+        "name": "LD2410C_2",
+        "uart_id": 1,
+        "tx_pin": 8,
+        "rx_pin": 9,
+        "out_pin": 3,
+    },
+)
 
 FRAME_HEADER = b"\xF4\xF3\xF2\xF1"
 FRAME_END = b"\xF8\xF7\xF6\xF5"
@@ -108,74 +120,108 @@ class LD2410CReader:
 
 
 def main():
-    uart = UART(
-        UART_ID,
-        baudrate=UART_BAUDRATE,
-        tx=Pin(UART_TX_PIN),
-        rx=Pin(UART_RX_PIN),
-        bits=8,
-        parity=None,
-        stop=1,
-        timeout=20,
-    )
-    out_pin = Pin(OUT_PIN, Pin.IN)
-    reader = LD2410CReader(uart)
+    sensors = []
 
-    last_out_state = out_pin.value()
+    for config in SENSORS:
+        uart = UART(
+            config["uart_id"],
+            baudrate=UART_BAUDRATE,
+            tx=Pin(config["tx_pin"]),
+            rx=Pin(config["rx_pin"]),
+            bits=8,
+            parity=None,
+            stop=1,
+            timeout=20,
+        )
+        out_pin = Pin(config["out_pin"], Pin.IN)
+        sensors.append(
+            {
+                "name": config["name"],
+                "uart_id": config["uart_id"],
+                "tx_pin": config["tx_pin"],
+                "rx_pin": config["rx_pin"],
+                "out_pin": config["out_pin"],
+                "out": out_pin,
+                "reader": LD2410CReader(uart),
+                "last_out_state": out_pin.value(),
+                "latest_reading": None,
+            }
+        )
+
     last_report = time.ticks_ms()
-    latest_reading = None
 
     print("PICO_READY")
-    print(
-        "LD2410C_TEST:UART_ID={},BAUD={},TX=GP{},RX=GP{},OUT=GP{}".format(
-            UART_ID, UART_BAUDRATE, UART_TX_PIN, UART_RX_PIN, OUT_PIN
+    for sensor in sensors:
+        print(
+            "{}:UART_ID={},BAUD={},PICO_TX=GP{},PICO_RX=GP{},OUT=GP{}".format(
+                sensor["name"],
+                sensor["uart_id"],
+                UART_BAUDRATE,
+                sensor["tx_pin"],
+                sensor["rx_pin"],
+                sensor["out_pin"],
+            )
         )
-    )
-    print("OTHER_SENSOR_NOTE:LEAVING_GP3_AND_GP4_UNTOUCHED")
-    print("WAITING_FOR_LD2410C")
+        print(
+            "{}_WIRING:VCC=3.3V_OUT,GND=GND,SENSOR_TX->PICO_RX_GP{},SENSOR_RX->PICO_TX_GP{},SENSOR_OUT->GP{}".format(
+                sensor["name"],
+                sensor["rx_pin"],
+                sensor["tx_pin"],
+                sensor["out_pin"],
+            )
+        )
+    print("CHECKLIST:COMMON_GROUND=YES,POWER=3.3V_OUT,UART_WIRING=CROSSED,SENSOR_TX_TO_PICO_RX=YES,SENSOR_RX_TO_PICO_TX=YES")
+    print("WAITING_FOR_LD2410C_FRAMES")
 
     while True:
-        out_state = out_pin.value()
-        if out_state != last_out_state:
-            print("LD2410C:OUT={}".format(out_state))
-            last_out_state = out_state
+        for sensor in sensors:
+            out_state = sensor["out"].value()
+            if out_state != sensor["last_out_state"]:
+                print("{}:OUT={}".format(sensor["name"], out_state))
+                sensor["last_out_state"] = out_state
 
-        bytes_read = reader.poll_uart()
-        if bytes_read:
-            frames = reader.read_frames()
-            for frame in frames:
-                reading = reader.parse_target_frame(frame)
-                if reading is not None:
-                    latest_reading = reading
+            bytes_read = sensor["reader"].poll_uart()
+            if bytes_read:
+                frames = sensor["reader"].read_frames()
+                for frame in frames:
+                    reading = sensor["reader"].parse_target_frame(frame)
+                    if reading is not None:
+                        sensor["latest_reading"] = reading
 
         now = time.ticks_ms()
         if time.ticks_diff(now, last_report) >= REPORT_MS:
-            if latest_reading is None:
-                print(
-                    "LD2410C:OUT={},UART_BYTES_TOTAL={},BUFFER_LEN={},STATUS=WAITING_FOR_VALID_FRAME".format(
-                        out_state,
-                        reader.total_uart_bytes,
-                        len(reader.buffer),
+            for sensor in sensors:
+                out_state = sensor["out"].value()
+                latest_reading = sensor["latest_reading"]
+
+                if latest_reading is None:
+                    print(
+                        "{}:OUT={},UART_BYTES_TOTAL={},BUFFER_LEN={},STATUS=WAITING_FOR_VALID_FRAME".format(
+                            sensor["name"],
+                            out_state,
+                            sensor["reader"].total_uart_bytes,
+                            len(sensor["reader"].buffer),
+                        )
                     )
-                )
-            else:
-                target_state = TARGET_STATES.get(
-                    latest_reading["target_state_raw"],
-                    "UNKNOWN({})".format(latest_reading["target_state_raw"]),
-                )
-                print(
-                    "LD2410C:OUT={},STATE={},MOVING_DIST_CM={},MOVING_ENERGY={},STATIONARY_DIST_CM={},STATIONARY_ENERGY={},DETECTION_DIST_CM={},FRAME_TYPE=0x{:02X},PAYLOAD_LEN={}".format(
-                        out_state,
-                        target_state,
-                        latest_reading["moving_distance_cm"],
-                        latest_reading["moving_energy"],
-                        latest_reading["stationary_distance_cm"],
-                        latest_reading["stationary_energy"],
-                        latest_reading["detection_distance_cm"],
-                        latest_reading["frame_type"],
-                        latest_reading["payload_length"],
+                else:
+                    target_state = TARGET_STATES.get(
+                        latest_reading["target_state_raw"],
+                        "UNKNOWN({})".format(latest_reading["target_state_raw"]),
                     )
-                )
+                    print(
+                        "{}:OUT={},STATE={},MOVING_DIST_CM={},MOVING_ENERGY={},STATIONARY_DIST_CM={},STATIONARY_ENERGY={},DETECTION_DIST_CM={},FRAME_TYPE=0x{:02X},PAYLOAD_LEN={}".format(
+                            sensor["name"],
+                            out_state,
+                            target_state,
+                            latest_reading["moving_distance_cm"],
+                            latest_reading["moving_energy"],
+                            latest_reading["stationary_distance_cm"],
+                            latest_reading["stationary_energy"],
+                            latest_reading["detection_distance_cm"],
+                            latest_reading["frame_type"],
+                            latest_reading["payload_length"],
+                        )
+                    )
             last_report = now
 
         time.sleep_ms(50)

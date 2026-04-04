@@ -31,9 +31,9 @@ TEXT_PANEL_PADDING_X = 60
 TEXT_PANEL_PADDING_Y = 28
 TEXT_PANEL_BORDER_WIDTH = 1
 IMAGE_BACKGROUND = "#000000"
-MAX_TEXT_LINES = 5
+MAX_TEXT_LINES = 6
 MAX_ERROR_LINES = 2
-MAX_WRAPPED_TEXT_LINES = 5
+MAX_WRAPPED_TEXT_LINES = 7
 
 PillowFont = ImageFont.ImageFont | ImageFont.FreeTypeFont
 
@@ -270,6 +270,9 @@ class LatestImageDisplay:
         lines = []
         if shared_state:
             lines = list(shared_state.get("live_inference_lines", []))[:MAX_TEXT_LINES]
+            agent_preview = shared_state.get("agent_preview")
+            if isinstance(agent_preview, str) and agent_preview.strip():
+                lines.append(agent_preview.strip())
             last_image_error = shared_state.get("last_image_error")
             last_openai_error = shared_state.get("last_openai_error")
             if shared_state.get("image_generation_in_progress"):

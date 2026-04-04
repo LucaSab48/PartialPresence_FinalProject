@@ -18,6 +18,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from hf_auth import load_hf_token
 from openai_auth import load_openai_settings
+from usb_microphone import (
+    attach_microphone_snapshot,
+    build_microphone_monitor_from_env,
+)
 
 
 PORT = "COM8"
@@ -32,10 +36,10 @@ FORCE_IMAGE_REFRESH_SECONDS = 10.0
 STATE_STABLE_HOLD_SECONDS = 0.9
 
 # Thresholds for deciding whether the interpreted state changed enough to matter.
-LIGHT_CHANGE_THRESHOLD = 6.0
 TEMPERATURE_CHANGE_THRESHOLD = 0.8
 HUMIDITY_CHANGE_THRESHOLD = 4.0
 DISTANCE_CHANGE_THRESHOLD_CM = 30.0
+AUDIO_ACTIVITY_CHANGE_THRESHOLD = 1.5
 
 SMOOTHING_WINDOW_SIZE = 6
 MIN_FRAMES_FOR_PROCESSING = 3
@@ -83,10 +87,10 @@ SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 CONTACT_SHEET_FILENAME = "seed_contact_sheet.png"
 SEED_INDEX_FILENAME = "seed_test_index.json"
 OPENAI_RESPONSE_TIMEOUT_FALLBACK_SECONDS = 25
-MAX_AI_LIVE_LINES = 5
+MAX_AI_LIVE_LINES = 6
 EMPTY_ROOM_BASELINE_PATH = SCRIPT_DIR / "empty_room_baseline.json"
 MAX_BASELINE_CHANGED_METRICS = 5
-MAX_LANGUAGE_PASS_LIVE_LINES = 4
+MAX_LANGUAGE_PASS_LIVE_LINES = 5
 MIN_LANGUAGE_PASS_LIVE_LINES = 3
 MAX_LANGUAGE_PASS_AGENT_NOTES = 1
 MIN_LANGUAGE_PASS_AGENT_NOTES = 0
@@ -174,12 +178,97 @@ def parse_sensor_line(raw_line):
     return frame
 
 
+def smooth_ld_sensor_frames(ld_frames):
+    if not ld_frames:
+        return None
+
+    ld_out_mean = numeric_mean([item.get("out") for item in ld_frames])
+    return {
+        "out": round(ld_out_mean) if ld_out_mean is not None else None,
+        "target_state": pick_mode([item.get("target_state") for item in ld_frames]),
+        "target_state_raw": pick_mode([item.get("target_state_raw") for item in ld_frames]),
+        "moving_distance_cm": numeric_mean([item.get("moving_distance_cm") for item in ld_frames]),
+        "moving_energy": numeric_mean([item.get("moving_energy") for item in ld_frames]),
+        "stationary_distance_cm": numeric_mean([item.get("stationary_distance_cm") for item in ld_frames]),
+        "stationary_energy": numeric_mean([item.get("stationary_energy") for item in ld_frames]),
+        "detection_distance_cm": numeric_mean([item.get("detection_distance_cm") for item in ld_frames]),
+        "status": pick_mode([item.get("status") for item in ld_frames]),
+        "state_history": [item.get("target_state") for item in ld_frames if item.get("target_state")],
+    }
+
+
+def combine_ld_summaries(*sensor_summaries):
+    available = [summary for summary in sensor_summaries if isinstance(summary, dict)]
+    if not available:
+        return None
+
+    states = []
+    status_values = []
+    target_state_values = []
+    target_state_raw_values = []
+    out_values = []
+    moving_distance_values = []
+    moving_energy_values = []
+    stationary_distance_values = []
+    stationary_energy_values = []
+    detection_distance_values = []
+
+    for summary in available:
+        states.extend(summary.get("state_history") or [])
+        if summary.get("status") is not None:
+            status_values.append(summary.get("status"))
+        if summary.get("target_state") is not None:
+            target_state_values.append(summary.get("target_state"))
+        if summary.get("target_state_raw") is not None:
+            target_state_raw_values.append(summary.get("target_state_raw"))
+        if summary.get("out") is not None:
+            out_values.append(summary.get("out"))
+        if summary.get("moving_distance_cm") is not None:
+            moving_distance_values.append(summary.get("moving_distance_cm"))
+        if summary.get("moving_energy") is not None:
+            moving_energy_values.append(summary.get("moving_energy"))
+        if summary.get("stationary_distance_cm") is not None:
+            stationary_distance_values.append(summary.get("stationary_distance_cm"))
+        if summary.get("stationary_energy") is not None:
+            stationary_energy_values.append(summary.get("stationary_energy"))
+        if summary.get("detection_distance_cm") is not None:
+            detection_distance_values.append(summary.get("detection_distance_cm"))
+
+    return {
+        "out": max(out_values) if out_values else None,
+        "target_state": pick_mode(target_state_values),
+        "target_state_raw": pick_mode(target_state_raw_values),
+        "moving_distance_cm": numeric_mean(moving_distance_values),
+        "moving_energy": max(moving_energy_values) if moving_energy_values else None,
+        "stationary_distance_cm": numeric_mean(stationary_distance_values),
+        "stationary_energy": max(stationary_energy_values) if stationary_energy_values else None,
+        "detection_distance_cm": numeric_mean(detection_distance_values),
+        "status": pick_mode(status_values),
+        "state_history": states,
+    }
+
+
 def smooth_frames(frames):
     bme_frames = [frame.get("bme688", {}) for frame in frames if isinstance(frame.get("bme688"), dict)]
-    light_frames = [frame.get("light", {}) for frame in frames if isinstance(frame.get("light"), dict)]
-    ld_frames = [frame.get("ld2410c", {}) for frame in frames if isinstance(frame.get("ld2410c"), dict)]
+    front_frames = [
+        frame.get("ld2410c_front", {})
+        for frame in frames
+        if isinstance(frame.get("ld2410c_front"), dict)
+    ]
+    back_frames = [
+        frame.get("ld2410c_back", {})
+        for frame in frames
+        if isinstance(frame.get("ld2410c_back"), dict)
+    ]
     sen_frames = [frame.get("sen0628", {}) for frame in frames if isinstance(frame.get("sen0628"), dict)]
-    ld_out_mean = numeric_mean([item.get("out") for item in ld_frames])
+    microphone_frames = [
+        frame.get("usb_microphone", {})
+        for frame in frames
+        if isinstance(frame.get("usb_microphone"), dict)
+    ]
+    front_summary = smooth_ld_sensor_frames(front_frames)
+    back_summary = smooth_ld_sensor_frames(back_frames)
+    combined_ld_summary = combine_ld_summaries(front_summary, back_summary)
 
     smoothed = {
         "frame_count": len(frames),
@@ -194,26 +283,9 @@ def smooth_frames(frames):
         }
         if bme_frames
         else None,
-        "light": {
-            "raw": numeric_mean([item.get("raw") for item in light_frames]),
-            "percent": numeric_mean([item.get("percent") for item in light_frames]),
-        }
-        if light_frames
-        else None,
-        "ld2410c": {
-            "out": round(ld_out_mean) if ld_out_mean is not None else None,
-            "target_state": pick_mode([item.get("target_state") for item in ld_frames]),
-            "target_state_raw": pick_mode([item.get("target_state_raw") for item in ld_frames]),
-            "moving_distance_cm": numeric_mean([item.get("moving_distance_cm") for item in ld_frames]),
-            "moving_energy": numeric_mean([item.get("moving_energy") for item in ld_frames]),
-            "stationary_distance_cm": numeric_mean([item.get("stationary_distance_cm") for item in ld_frames]),
-            "stationary_energy": numeric_mean([item.get("stationary_energy") for item in ld_frames]),
-            "detection_distance_cm": numeric_mean([item.get("detection_distance_cm") for item in ld_frames]),
-            "status": pick_mode([item.get("status") for item in ld_frames]),
-            "state_history": [item.get("target_state") for item in ld_frames if item.get("target_state")],
-        }
-        if ld_frames
-        else None,
+        "ld2410c_front": front_summary,
+        "ld2410c_back": back_summary,
+        "ld2410c": combined_ld_summary,
         "sen0628": {
             "center_mm": numeric_mean([item.get("center_mm") for item in sen_frames]),
             "min_mm": numeric_mean([item.get("min_mm") for item in sen_frames]),
@@ -232,12 +304,81 @@ def smooth_frames(frames):
         }
         if sen_frames
         else None,
+        "usb_microphone": {
+            "available": pick_mode([item.get("available") for item in microphone_frames]),
+            "device_name": pick_mode([item.get("device_name") for item in microphone_frames]),
+            "device_index": pick_mode([item.get("device_index") for item in microphone_frames]),
+            "sample_rate_hz": numeric_mean([item.get("sample_rate_hz") for item in microphone_frames]),
+            "rms": numeric_mean([item.get("rms") for item in microphone_frames]),
+            "peak": max(
+                [item.get("peak") for item in microphone_frames if isinstance(item.get("peak"), (int, float))],
+                default=None,
+            ),
+            "noise_floor_rms": numeric_mean(
+                [item.get("noise_floor_rms") for item in microphone_frames]
+            ),
+            "relative_rms": numeric_mean([item.get("relative_rms") for item in microphone_frames]),
+            "relative_db": numeric_mean([item.get("relative_db") for item in microphone_frames]),
+            "activity_score": numeric_mean([item.get("activity_score") for item in microphone_frames]),
+            "active_fraction": numeric_mean([item.get("active_fraction") for item in microphone_frames]),
+        }
+        if microphone_frames
+        else None,
         "errors": {
             "bme688_error": pick_mode([frame.get("bme688_error") for frame in frames]),
             "sen0628_error": pick_mode([frame.get("sen0628_error") for frame in frames]),
         },
     }
     return smoothed
+
+
+def interpret_audio_activity(microphone_data):
+    if not isinstance(microphone_data, dict) or not microphone_data.get("available"):
+        return "audio unavailable"
+
+    relative_db = microphone_data.get("relative_db")
+    activity_score = microphone_data.get("activity_score")
+    active_fraction = microphone_data.get("active_fraction")
+
+    if isinstance(relative_db, (int, float)):
+        if (
+            relative_db >= 10
+            and isinstance(active_fraction, (int, float))
+            and active_fraction >= 0.65
+        ) or (isinstance(activity_score, (int, float)) and activity_score >= 0.75):
+            return "strong shared room noise"
+        if (
+            relative_db >= 6
+            and isinstance(active_fraction, (int, float))
+            and active_fraction >= 0.4
+        ) or (isinstance(activity_score, (int, float)) and activity_score >= 0.35):
+            return "moderate human-made room noise"
+        if (
+            relative_db >= 3
+            and isinstance(active_fraction, (int, float))
+            and active_fraction >= 0.2
+        ) or (isinstance(activity_score, (int, float)) and activity_score >= 0.12):
+            return "light room noise"
+    return "very quiet room"
+
+
+def build_audio_live_line(activity):
+    line_map = {
+        "audio unavailable": "audio feed unavailable",
+        "very quiet room": "audio suggests a very quiet room",
+        "light room noise": "audio suggests light occupancy noise",
+        "moderate human-made room noise": "audio suggests shared room noise",
+        "strong shared room noise": "audio strongly suggests shared occupancy",
+    }
+    return line_map.get(activity, "audio feed partially resolved")
+
+
+def build_image_foreshadow_line(descriptors):
+    figure_count = int(descriptors.get("figure_count", 0) or 0)
+    placement_summary = str(descriptors.get("placement_summary") or "occupied room estimate")
+    if figure_count <= 0:
+        return "next image likely keeps the room nearly empty"
+    return f"next image likely leans toward {placement_summary}"
 
 
 def load_empty_room_baseline() -> dict[str, Any] | None:
@@ -336,6 +477,55 @@ def classify_baseline_departure(empty_room_comparison: dict[str, Any] | None) ->
     if departure_score <= 4:
         return "moderate"
     return "strong"
+
+
+def radar_sensor_strength(ld_data):
+    if not ld_data:
+        return 0.0
+
+    target_state = ld_data.get("target_state")
+    out_state = ld_data.get("out") or 0
+    moving_energy = ld_data.get("moving_energy") or 0
+    stationary_energy = ld_data.get("stationary_energy") or 0
+    strength = max(float(moving_energy), float(stationary_energy))
+
+    if target_state == "MOVING_AND_STATIONARY":
+        strength += 25.0
+    elif target_state == "MOVING_TARGET":
+        strength += 18.0
+    elif target_state == "STATIONARY_TARGET":
+        strength += 12.0
+    elif target_state == "NO_TARGET" and out_state == 0:
+        strength -= 10.0
+
+    if out_state == 1:
+        strength += 10.0
+    if ld_data.get("status") == "WAITING_FOR_VALID_FRAME":
+        strength -= 5.0
+
+    return strength
+
+
+def determine_ld_zone_activity(front_data, back_data):
+    front_strength = radar_sensor_strength(front_data)
+    back_strength = radar_sensor_strength(back_data)
+    active_zones = []
+
+    if front_strength >= 18:
+        active_zones.append("front")
+    if back_strength >= 18:
+        active_zones.append("back")
+
+    dominant_zone = None
+    if front_strength >= 18 or back_strength >= 18:
+        dominant_zone = "front" if front_strength >= back_strength else "back"
+
+    return {
+        "front_strength": front_strength,
+        "back_strength": back_strength,
+        "active_zones": active_zones,
+        "dominant_zone": dominant_zone,
+    }
 
 
 def interpret_presence(ld_data):
@@ -499,6 +689,49 @@ def estimate_people_layout(ld_data, sen_data, presence_activity, presence_count)
     }
 
 
+def apply_ld_zone_bias(people_layout, ld_zone_activity):
+    active_ld_zones = list(ld_zone_activity.get("active_zones") or [])
+    dominant_ld_zone = ld_zone_activity.get("dominant_zone")
+    if not active_ld_zones and not dominant_ld_zone:
+        return people_layout
+
+    updated_layout = dict(people_layout)
+    if updated_layout["figure_count"] <= 0:
+        updated_layout["active_ld_zones"] = active_ld_zones
+        updated_layout["dominant_ld_zone"] = dominant_ld_zone
+        return updated_layout
+
+    if updated_layout["figure_count"] >= 2 and len(active_ld_zones) >= 2:
+        updated_layout["placement_summary"] = "two people split between front and back"
+        updated_layout["placement_prompt"] = (
+            "show exactly two human figures, one nearer the front of the room and "
+            "the other deeper toward the back of the room"
+        )
+        updated_layout["layout_mode"] = "depth_split"
+        updated_layout["primary_zone"] = "front"
+        updated_layout["secondary_zone"] = "back"
+    elif dominant_ld_zone == "front":
+        updated_layout["placement_summary"] = "one person near the front"
+        updated_layout["placement_prompt"] = (
+            "show exactly one human figure toward the front of the room, leaning nearer to the foreground"
+        )
+        updated_layout["depth_band"] = "front"
+        updated_layout["primary_zone"] = "front"
+        updated_layout["secondary_zone"] = "back"
+    elif dominant_ld_zone == "back":
+        updated_layout["placement_summary"] = "one person near the back"
+        updated_layout["placement_prompt"] = (
+            "show exactly one human figure toward the back of the room, set deeper in the space"
+        )
+        updated_layout["depth_band"] = "back"
+        updated_layout["primary_zone"] = "back"
+        updated_layout["secondary_zone"] = "front"
+
+    updated_layout["active_ld_zones"] = active_ld_zones
+    updated_layout["dominant_ld_zone"] = dominant_ld_zone
+    return updated_layout
+
+
 def describe_spatial_certainty(
     presence_activity: str,
     active_zones: list[str],
@@ -534,7 +767,7 @@ def build_figure_variation_modifiers(descriptors: dict[str, Any]) -> list[str]:
         else:
             modifiers.append("single mid-room figure")
     else:
-        if layout_mode == "split":
+        if layout_mode in ("split", "depth_split"):
             modifiers.append("two separated figures")
         else:
             modifiers.append("clustered figure grouping")
@@ -543,6 +776,10 @@ def build_figure_variation_modifiers(descriptors: dict[str, Any]) -> list[str]:
         modifiers.append("figure grouping shifted toward left side")
     elif primary_zone == "right":
         modifiers.append("figure grouping shifted toward right side")
+    elif primary_zone == "front":
+        modifiers.append("figure grouping shifted toward front")
+    elif primary_zone == "back":
+        modifiers.append("figure grouping shifted toward back")
     else:
         modifiers.append("one centered or slightly off-center figure emphasis")
 
@@ -555,7 +792,7 @@ def build_figure_variation_modifiers(descriptors: dict[str, Any]) -> list[str]:
 
     if layout_mode == "clustered":
         modifiers.append("tighter figure spacing")
-    elif layout_mode == "split":
+    elif layout_mode in ("split", "depth_split"):
         modifiers.append("wider spacing between figures")
     else:
         modifiers.append("pose and silhouette may stay somewhat ambiguous")
@@ -652,8 +889,8 @@ def interpret_sen0628_figure_side(sen_data):
     return strongest_zone
 
 
-def interpret_presence_location(ld_data, sen_data):
-    if not ld_data and not sen_data:
+def interpret_presence_location(ld_data, sen_data, ld_zone_activity=None):
+    if not ld_data and not sen_data and not ld_zone_activity:
         return "location uncertain"
 
     distance_cm = None
@@ -681,26 +918,27 @@ def interpret_presence_location(ld_data, sen_data):
     else:
         depth_phrase = "farther back in the space"
 
+    active_ld_zones = []
+    dominant_ld_zone = None
+    if isinstance(ld_zone_activity, dict):
+        active_ld_zones = list(ld_zone_activity.get("active_zones") or [])
+        dominant_ld_zone = ld_zone_activity.get("dominant_zone")
+
+    if len(active_ld_zones) >= 2:
+        return "split between the front and back zones"
+    if dominant_ld_zone == "front":
+        return "near the front of the room"
+    if dominant_ld_zone == "back":
+        return "toward the back of the room"
+
     horizontal_phrase = sen0628_location_detail(sen_data)
     if horizontal_phrase is None:
         return depth_phrase
     return f"{depth_phrase}, {horizontal_phrase}"
 
 
-def interpret_lighting(light_data):
-    if not light_data:
-        return "lighting uncertain"
-
-    percent = light_data.get("percent")
-    if percent is None:
-        return "lighting uncertain"
-    if percent < 18:
-        return "dark"
-    if percent < 40:
-        return "dim"
-    if percent < 70:
-        return "moderate light"
-    return "bright"
+def interpret_lighting():
+    return "lighting unavailable"
 
 
 def interpret_atmosphere(bme_data):
@@ -722,7 +960,7 @@ def interpret_atmosphere(bme_data):
     return "neutral indoor air"
 
 
-def interpret_spatial_impression(ld_data, sen_data):
+def interpret_spatial_impression(ld_data, sen_data, ld_zone_activity=None):
     if not sen_data and not ld_data:
         return "spatial impression uncertain"
 
@@ -742,6 +980,12 @@ def interpret_spatial_impression(ld_data, sen_data):
     occupied_zones = sum(1 for value in zone_counts if value >= 3)
     detection_distance = (ld_data or {}).get("detection_distance_cm")
 
+    active_ld_zones = []
+    if isinstance(ld_zone_activity, dict):
+        active_ld_zones = list(ld_zone_activity.get("active_zones") or [])
+
+    if len(active_ld_zones) >= 2:
+        return "deep and layered"
     if near_points >= 10 and occupied_zones >= 2:
         return "shallow and fragmented"
     if far_points >= 20 and occupied_zones <= 1:
@@ -750,11 +994,15 @@ def interpret_spatial_impression(ld_data, sen_data):
         return "wide and distributed"
     if detection_distance is not None and detection_distance < 120:
         return "compressed and near"
+    if active_ld_zones == ["front"]:
+        return "weighted toward the front"
+    if active_ld_zones == ["back"]:
+        return "weighted toward the back"
     return "contained and interior"
 
 
-def interpret_abstract_background(light_data, bme_data):
-    lighting = interpret_lighting(light_data)
+def interpret_abstract_background(bme_data):
+    lighting = interpret_lighting()
     atmosphere = interpret_atmosphere(bme_data)
 
     if lighting == "dark":
@@ -803,6 +1051,8 @@ def build_people_directive(descriptors):
         "left": "toward the left side",
         "center": "near the middle zone",
         "right": "toward the right side",
+        "front": "toward the front zone",
+        "back": "toward the back zone",
     }.get(str(primary_zone), "near the middle zone")
     depth_text = {
         "front": "leaning nearer to the foreground",
@@ -816,17 +1066,24 @@ def build_people_directive(descriptors):
     )
     spacing_text = (
         "allow the figures to separate across the room"
-        if layout_mode == "split"
+        if layout_mode in ("split", "depth_split")
         else "allow tighter grouping between the figures"
         if layout_mode == "clustered"
         else "allow some silhouette ambiguity without removing the body presence"
     )
+    audio_text = {
+        "strong shared room noise": "treat the audio as strong evidence of multiple occupants or sustained shared activity, but do not force extra bodies without support from the other sensors",
+        "moderate human-made room noise": "treat the audio as supporting evidence of ongoing occupancy and possible multiple people, while keeping the count conservative",
+        "light room noise": "treat the audio as a weak occupancy cue only",
+        "very quiet room": "treat the audio as weak evidence for additional occupants",
+        "audio unavailable": "do not infer extra occupants from missing audio",
+    }.get(str(descriptors.get("audio_activity")), "keep the mood restrained and observational")
     return (
         f"human presence is being inferred as {presence}, {count_text}, {zone_text}, {depth_text}, "
         "the room must read as visibly occupied, the figures must be noticeable at first glance, "
         "render adult human bodies clearly enough to read immediately, not just traces, shadows, or implied presence, "
         "keep the figures legible in the frame with enough scale to stand out from the background, "
-        f"{spacing_text}, vary the figures more than the room itself"
+        f"{spacing_text}, {audio_text}, vary the figures more than the room itself"
     )
 
 
@@ -876,27 +1133,49 @@ def select_generation_seed(descriptors: dict[str, Any]) -> int:
 
 
 def interpret_sensor_state(smoothed):
-    presence_activity = interpret_presence(smoothed.get("ld2410c"))
-    presence_count = estimate_presence_count(smoothed.get("ld2410c"), smoothed.get("sen0628"))
+    combined_ld_data = smoothed.get("ld2410c")
+    front_ld_data = smoothed.get("ld2410c_front")
+    back_ld_data = smoothed.get("ld2410c_back")
+    microphone_data = smoothed.get("usb_microphone")
+    ld_zone_activity = determine_ld_zone_activity(front_ld_data, back_ld_data)
+
+    presence_activity = interpret_presence(combined_ld_data)
+    presence_count = estimate_presence_count(combined_ld_data, smoothed.get("sen0628"))
     people_layout = estimate_people_layout(
-        smoothed.get("ld2410c"),
+        combined_ld_data,
         smoothed.get("sen0628"),
         presence_activity,
         presence_count,
     )
+    people_layout = apply_ld_zone_bias(people_layout, ld_zone_activity)
 
     descriptors = {
         "presence_activity": presence_activity,
         "presence_count": presence_count,
         "sen0628_spatial_estimate": interpret_sen0628_spatial_estimate(smoothed.get("sen0628")),
         "sen0628_figure_side": interpret_sen0628_figure_side(smoothed.get("sen0628")),
-        "presence_location": interpret_presence_location(smoothed.get("ld2410c"), smoothed.get("sen0628")),
-        "lighting_condition": interpret_lighting(smoothed.get("light")),
-        "atmospheric_condition": interpret_atmosphere(smoothed.get("bme688")),
-        "spatial_impression": interpret_spatial_impression(smoothed.get("ld2410c"), smoothed.get("sen0628")),
-        "abstract_background": interpret_abstract_background(
-            smoothed.get("light"), smoothed.get("bme688")
+        "presence_location": interpret_presence_location(
+            combined_ld_data,
+            smoothed.get("sen0628"),
+            ld_zone_activity,
         ),
+        "lighting_condition": interpret_lighting(),
+        "atmospheric_condition": interpret_atmosphere(smoothed.get("bme688")),
+        "spatial_impression": interpret_spatial_impression(
+            combined_ld_data,
+            smoothed.get("sen0628"),
+            ld_zone_activity,
+        ),
+        "abstract_background": interpret_abstract_background(smoothed.get("bme688")),
+        "audio_activity": interpret_audio_activity(microphone_data),
+        "audio_device": None if not isinstance(microphone_data, dict) else microphone_data.get("device_name"),
+        "audio_relative_db": None if not isinstance(microphone_data, dict) else microphone_data.get("relative_db"),
+        "front_presence": interpret_presence(front_ld_data),
+        "back_presence": interpret_presence(back_ld_data),
+        "front_strength": round(ld_zone_activity["front_strength"], 1),
+        "back_strength": round(ld_zone_activity["back_strength"], 1),
+        "active_ld_zones": list(ld_zone_activity["active_zones"]),
+        "dominant_ld_zone": ld_zone_activity["dominant_zone"],
         "figure_count": people_layout["figure_count"],
         "placement_summary": people_layout["placement_summary"],
         "placement_prompt": people_layout["placement_prompt"],
@@ -917,13 +1196,13 @@ def interpret_sensor_state(smoothed):
 
 def build_live_inference_lines(descriptors):
     presence_activity = descriptors["presence_activity"]
-    lighting = descriptors["lighting_condition"]
     atmosphere = descriptors["atmospheric_condition"]
     depth_band = descriptors["depth_band"]
     primary_zone = descriptors["primary_zone"]
     figure_count = int(descriptors["figure_count"])
     layout_mode = descriptors["layout_mode"]
     spatial_certainty = descriptors["spatial_certainty"]
+    audio_activity = descriptors.get("audio_activity")
 
     movement_line_map = {
         "no presence": "occupancy weighting reduced",
@@ -931,13 +1210,6 @@ def build_live_inference_lines(descriptors):
         "active presence": "occupancy revision active",
         "intermittent movement": "occupancy state oscillating",
         "presence uncertain": "occupancy remains provisional",
-    }
-    light_line_map = {
-        "dark": "low ambient field retained",
-        "dim": "dim ambient field held",
-        "moderate light": "ambient brightness stable",
-        "bright": "brighter field retained",
-        "lighting uncertain": "ambient light weakly resolved",
     }
     atmosphere_line_map = {
         "stale heavy atmosphere": "air density slightly elevated",
@@ -951,7 +1223,7 @@ def build_live_inference_lines(descriptors):
         occupancy_line = "room retained; figures reduced"
     elif figure_count == 1:
         occupancy_line = "single figure favored"
-    elif layout_mode == "split":
+    elif layout_mode in ("split", "depth_split"):
         occupancy_line = "split figure layout favored"
     else:
         occupancy_line = "clustered figure state favored"
@@ -960,6 +1232,10 @@ def build_live_inference_lines(descriptors):
         lateral_line = "left trace dominant"
     elif primary_zone == "right":
         lateral_line = "right trace dominant"
+    elif primary_zone == "front":
+        lateral_line = "front trace dominant"
+    elif primary_zone == "back":
+        lateral_line = "back trace dominant"
     else:
         lateral_line = "central trace dominant"
 
@@ -970,15 +1246,26 @@ def build_live_inference_lines(descriptors):
     else:
         depth_line = "mid-depth weighting held"
 
+    dominant_ld_zone = descriptors.get("dominant_ld_zone")
+    if dominant_ld_zone == "front":
+        radar_line = "front radar leads"
+    elif dominant_ld_zone == "back":
+        radar_line = "back radar leads"
+    elif len(descriptors.get("active_ld_zones", [])) >= 2:
+        radar_line = "front/back radar split held"
+    else:
+        radar_line = "radar zone weighting partial"
+
     lines = [
-        "background held stable",
+        "background continuity held across the room",
         movement_line_map.get(presence_activity, "signal weighting is being revised"),
-        occupancy_line,
-        lateral_line,
-        depth_line,
+        f"{occupancy_line} under current sensor weighting",
+        f"{lateral_line}; {depth_line}",
+        radar_line,
+        build_audio_live_line(audio_activity),
         spatial_certainty,
-        light_line_map.get(lighting, "ambient light remains under revision"),
         atmosphere_line_map.get(atmosphere, "air reading remains only partially resolved"),
+        build_image_foreshadow_line(descriptors),
     ]
     return lines
 
@@ -1071,7 +1358,7 @@ def sanitize_live_lines(candidate_lines: Any, fallback_lines: list[str]) -> list
     for item in candidate_lines:
         if not isinstance(item, str):
             continue
-        cleaned = compact_machine_phrase(item, max_length=44)
+        cleaned = compact_machine_phrase(item, max_length=58)
         if cleaned:
             cleaned_lines.append(cleaned)
 
@@ -1083,6 +1370,184 @@ def build_language_pass_fallback_preview(fallback_plan: dict[str, Any]) -> str:
     if fallback_descriptors.get("figure_count", 0) > 0:
         return "upcoming image preview: " + fallback_descriptors["placement_summary"]
     return "upcoming image preview: empty installation space"
+
+
+def sanitize_choice(value: Any, allowed_values: set[str], fallback: str) -> str:
+    if not isinstance(value, str):
+        return fallback
+    cleaned = " ".join(value.split()).strip().lower()
+    if cleaned in allowed_values:
+        return cleaned
+    return fallback
+
+
+def sanitize_active_zones(value: Any, fallback: list[str]) -> list[str]:
+    allowed_values = {"front", "back", "left", "center", "right"}
+    if not isinstance(value, list):
+        return fallback
+
+    cleaned: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        normalized = " ".join(item.split()).strip().lower()
+        if normalized not in allowed_values:
+            continue
+        if normalized not in cleaned:
+            cleaned.append(normalized)
+    return cleaned or fallback
+
+
+def sanitize_figure_count(value: Any, fallback: int) -> int:
+    if isinstance(value, bool):
+        return fallback
+    if isinstance(value, (int, float)):
+        count = int(round(float(value)))
+        if count in (0, 1, 2):
+            return count
+    return fallback
+
+
+def sanitize_short_text(value: Any, fallback: str, *, max_length: int) -> str:
+    if not isinstance(value, str):
+        return fallback
+    cleaned = " ".join(value.split()).strip()
+    if not cleaned:
+        return fallback
+    cleaned = cleaned[:max_length].strip(" ,.;:-")
+    return cleaned or fallback
+
+
+def sanitize_scene_interpretation(
+    scene_interpretation: dict[str, Any],
+    fallback_plan: dict[str, Any],
+) -> dict[str, Any]:
+    fallback_descriptors = dict(fallback_plan["descriptors"])
+    allowed_presence_activity = {
+        "no presence",
+        "still presence",
+        "active presence",
+        "intermittent movement",
+        "presence uncertain",
+    }
+    allowed_presence_count = {
+        "no people",
+        "one person",
+        "two people",
+        "presence uncertain",
+    }
+    allowed_zone_values = {"left", "center", "right", "front", "back"}
+    allowed_depth_band = {"front", "mid-room", "back"}
+    allowed_layout_mode = {"empty", "single", "split", "depth_split", "clustered", "ambiguous"}
+
+    descriptors = dict(fallback_descriptors)
+    descriptors["presence_activity"] = sanitize_choice(
+        scene_interpretation.get("presence_activity"),
+        allowed_presence_activity,
+        str(fallback_descriptors["presence_activity"]),
+    )
+    descriptors["presence_count"] = sanitize_choice(
+        scene_interpretation.get("presence_count"),
+        allowed_presence_count,
+        str(fallback_descriptors["presence_count"]),
+    )
+    descriptors["figure_count"] = sanitize_figure_count(
+        scene_interpretation.get("figure_count"),
+        int(fallback_descriptors["figure_count"]),
+    )
+    descriptors["primary_zone"] = sanitize_choice(
+        scene_interpretation.get("primary_zone"),
+        allowed_zone_values,
+        str(fallback_descriptors["primary_zone"]),
+    )
+    descriptors["secondary_zone"] = sanitize_choice(
+        scene_interpretation.get("secondary_zone"),
+        allowed_zone_values,
+        str(fallback_descriptors["secondary_zone"]),
+    )
+    descriptors["depth_band"] = sanitize_choice(
+        scene_interpretation.get("depth_band"),
+        allowed_depth_band,
+        str(fallback_descriptors["depth_band"]),
+    )
+    descriptors["layout_mode"] = sanitize_choice(
+        scene_interpretation.get("layout_mode"),
+        allowed_layout_mode,
+        str(fallback_descriptors["layout_mode"]),
+    )
+    descriptors["active_zones"] = sanitize_active_zones(
+        scene_interpretation.get("active_zones"),
+        list(fallback_descriptors.get("active_zones") or []),
+    )
+    descriptors["presence_location"] = sanitize_short_text(
+        scene_interpretation.get("presence_location"),
+        str(fallback_descriptors["presence_location"]),
+        max_length=72,
+    )
+    descriptors["placement_summary"] = sanitize_short_text(
+        scene_interpretation.get("placement_summary"),
+        str(fallback_descriptors["placement_summary"]),
+        max_length=72,
+    )
+    descriptors["placement_prompt"] = sanitize_short_text(
+        scene_interpretation.get("placement_prompt"),
+        str(fallback_descriptors["placement_prompt"]),
+        max_length=160,
+    )
+    descriptors["spatial_certainty"] = sanitize_short_text(
+        scene_interpretation.get("spatial_certainty"),
+        str(fallback_descriptors["spatial_certainty"]),
+        max_length=48,
+    )
+
+    if descriptors["figure_count"] <= 0 or descriptors["presence_count"] == "no people":
+        descriptors["figure_count"] = 0
+        descriptors["presence_count"] = "no people"
+        descriptors["layout_mode"] = "empty"
+    elif descriptors["figure_count"] == 1 and descriptors["presence_count"] == "two people":
+        descriptors["presence_count"] = "one person"
+    elif descriptors["figure_count"] >= 2 and descriptors["presence_count"] == "one person":
+        descriptors["presence_count"] = "two people"
+
+    if descriptors["figure_count"] == 0 and descriptors["presence_activity"] != "presence uncertain":
+        descriptors["presence_activity"] = "no presence"
+
+    descriptors["figure_variation_modifiers"] = build_figure_variation_modifiers(descriptors)
+
+    live_lines = sanitize_short_string_list(
+        scene_interpretation.get("live_inference_lines"),
+        fallback=fallback_plan["live_lines"],
+        min_items=MIN_LANGUAGE_PASS_LIVE_LINES,
+        max_items=MAX_AI_LIVE_LINES,
+        max_length=58,
+    )
+    agent_notes = sanitize_short_string_list(
+        scene_interpretation.get("agent_notes"),
+        fallback=[],
+        min_items=MIN_LANGUAGE_PASS_AGENT_NOTES,
+        max_items=MAX_LANGUAGE_PASS_AGENT_NOTES,
+        max_length=40,
+    )
+    prompt_modifiers = sanitize_prompt_modifiers(
+        scene_interpretation.get("prompt_modifiers"),
+        fallback=descriptors.get("figure_variation_modifiers", []),
+        force_occupied=int(descriptors.get("figure_count", 0)) > 0,
+    )
+    image_preview = compact_machine_phrase(
+        sanitize_text_value(
+            scene_interpretation.get("image_preview"),
+            build_language_pass_fallback_preview({"descriptors": descriptors}),
+        ),
+        max_length=68,
+    )
+
+    return {
+        "descriptors": descriptors,
+        "live_inference_lines": live_lines,
+        "agent_notes": agent_notes,
+        "prompt_modifiers": prompt_modifiers,
+        "image_preview": image_preview,
+    }
 
 
 def sanitize_short_string_list(
@@ -1143,7 +1608,7 @@ def sanitize_prompt_modifiers(value: Any, fallback: list[str], *, force_occupied
     )
     sanitized_items: list[str] = []
     for item in cleaned_items:
-        compact = re.sub(r"[^a-zA-Z0-9 ,\\-/]", "", item).strip(" ,.;:-")
+        compact = re.sub(r"[^a-zA-Z0-9 ,\\/\\-]", "", item).strip(" ,.;:-")
         if not compact:
             continue
         lowered = compact.lower()
@@ -1250,7 +1715,7 @@ def build_llm_interpretation_payload(
             top_changed_metrics = changed_metrics[:MAX_BASELINE_CHANGED_METRICS]
 
     return {
-        "deterministic_state": {
+        "heuristic_interpretation": {
             "figure_count": descriptors["figure_count"],
             "presence_activity": descriptors["presence_activity"],
             "presence_count": descriptors["presence_count"],
@@ -1259,9 +1724,14 @@ def build_llm_interpretation_payload(
             "presence_location": descriptors["presence_location"],
             "lighting_condition": descriptors["lighting_condition"],
             "atmospheric_condition": descriptors["atmospheric_condition"],
+            "audio_activity": descriptors.get("audio_activity"),
             "spatial_impression": descriptors["spatial_impression"],
             "sen0628_spatial_estimate": descriptors["sen0628_spatial_estimate"],
             "sen0628_figure_side": descriptors["sen0628_figure_side"],
+            "dominant_ld_zone": descriptors.get("dominant_ld_zone"),
+            "active_ld_zones": descriptors.get("active_ld_zones"),
+            "front_presence": descriptors.get("front_presence"),
+            "back_presence": descriptors.get("back_presence"),
             "depth_band": descriptors["depth_band"],
             "primary_zone": descriptors["primary_zone"],
             "layout_mode": descriptors["layout_mode"],
@@ -1273,6 +1743,20 @@ def build_llm_interpretation_payload(
             "top_changed_metrics": top_changed_metrics,
             "departure_level": classify_baseline_departure(empty_room_comparison),
         },
+        "task": {
+            "goal": (
+                "infer occupancy, approximate human count, approximate location, and image-driving scene interpretation "
+                "from the smoothed sensor state"
+            ),
+            "priority_order": [
+                "presence_activity",
+                "presence_count",
+                "figure_count",
+                "placement",
+                "depth and zone estimate",
+                "stable-room prompt language",
+            ],
+        },
         "prompt_intent": {
             "background_priority": "keep the room and camera stable across generations",
             "figure_priority": "allow figures to vary more than the room",
@@ -1283,9 +1767,11 @@ def build_llm_interpretation_payload(
         },
         "raw_sensor_summary": {
             "ld2410c": smoothed.get("ld2410c"),
+            "ld2410c_front": smoothed.get("ld2410c_front"),
+            "ld2410c_back": smoothed.get("ld2410c_back"),
             "sen0628": smoothed.get("sen0628"),
-            "light": smoothed.get("light"),
             "bme688": smoothed.get("bme688"),
+            "usb_microphone": smoothed.get("usb_microphone"),
         },
     }
 
@@ -1298,35 +1784,50 @@ def fetch_openai_language_pass(
 ) -> dict[str, Any]:
     payload = build_llm_interpretation_payload(smoothed, fallback_plan, empty_room_baseline)
     system_prompt = (
-        "You are a language pass for an installation-space sensing system. "
-        "The deterministic_state is the source of truth. "
-        "Do not increase figure_count. "
-        "If deterministic figure_count is greater than 0, do not erase or weaken occupancy. "
-        "When deterministic figure_count is greater than 0, keep visible human figures explicit in wording and do not drift toward an empty room. "
-        "Do not contradict placement_summary. "
-        "Do not override presence_count, presence_activity, or major placement logic. "
+        "You are the primary scene interpreter for an installation-space sensing system. "
+        "Your job is to interpret the smoothed sensor data itself, not just rewrite heuristic text. "
+        "Use heuristic_interpretation as a fallback suggestion, not as the source of truth. "
+        "Occupancy and approximate placement should come from your reasoning over raw_sensor_summary plus baseline_comparison. "
+        "Stay conservative when the evidence is weak or contradictory. "
+        "Do not invent extra certainty. "
         "Do not invent room changes, camera changes, furniture, or new architecture. "
         "If baseline departure is minimal or weak, prefer caution, uncertainty, and partial interpretation. "
         "Keep the tone machine-like, restrained, observational, and concise. "
-        "Avoid poetic excess, storytelling, surveillance language, and explanation. "
-        "Write as terse status fragments, not sentences or prose. "
+        "Allow fresh wording and small variations in phrasing rather than repeating a fixed template. "
+        "Avoid poetic excess, storytelling, surveillance language, and long explanation. "
+        "Write in short projector-friendly fragments or clipped sentences, not full prose paragraphs. "
         "Favor wording about tendencies, shifts, ambiguity, continuity, occupancy revision, figure placement, figure scale, and room preservation. "
         "Do not state room contents as hard facts unless certainty is extremely strong. "
         "Keep phrasing projector-friendly and glance-readable. "
-        "Return JSON only with these keys: live_inference_lines, image_preview, agent_notes, prompt_modifiers. "
-        "Rules: live_inference_lines must be 3 to 4 very short lines; "
-        "each live line should usually be 2 to 6 words and under 44 characters; "
-        "image_preview must be 1 very short fragment; "
+        "Return JSON only with these keys: "
+        "presence_activity, presence_count, figure_count, presence_location, primary_zone, secondary_zone, "
+        "active_zones, depth_band, layout_mode, placement_summary, placement_prompt, spatial_certainty, "
+        "live_inference_lines, image_preview, agent_notes, prompt_modifiers. "
+        "Allowed values: "
+        "presence_activity in [no presence, still presence, active presence, intermittent movement, presence uncertain]; "
+        "presence_count in [no people, one person, two people, presence uncertain]; "
+        "figure_count in [0, 1, 2]; "
+        "primary_zone and secondary_zone in [left, center, right, front, back]; "
+        "active_zones as a short list using those same values; "
+        "depth_band in [front, mid-room, back]; "
+        "layout_mode in [empty, single, split, depth_split, clustered, ambiguous]. "
+        "Rules: live_inference_lines must be 4 to 5 short lines; "
+        "the set of lines should usually include some audio signal and some foreshadowing of the next image state; "
+        "not every line needs a rigid function, and the language can vary naturally as long as it stays concise; "
+        "each live line should usually be under 58 characters, with most lines landing around 4 to 12 words; "
+        "image_preview must be 1 short forward-looking fragment; "
         "agent_notes should be 0 to 1 short technical notes; "
         "prompt_modifiers must be 2 to 4 short visual phrases that can be appended to a prompt; "
         "prompt_modifiers should prioritize visible figure variation such as count, spacing, clustering, side bias, depth, and scale while keeping the room broadly consistent; "
         "keep prompt_modifiers concise rather than prose; "
-        "prefer phrases like 'left trace dominant', 'background held stable', 'split figure layout favored'; "
+        "you may invent new wording instead of copying stock phrases; "
+        "If the evidence is ambiguous, use presence uncertain and cautious placement phrasing rather than guessing. "
         "do not include markdown fences."
     )
     request_payload = {
         "model": str(openai_settings.get("model", "")),
-        "max_output_tokens": 180,
+        "max_output_tokens": 420,
+        "text": {"format": {"type": "json_object"}},
         "input": [
             {
                 "role": "system",
@@ -1369,11 +1870,11 @@ def fetch_openai_language_pass(
 
 
 def build_final_prompt_from_language_pass(
-    fallback_plan: dict[str, Any],
-    language_pass: dict[str, Any],
+    scene_plan: dict[str, Any],
+    prompt_modifiers: list[str],
 ) -> str:
-    prompt_sections = fallback_plan["prompt_sections"]
-    figure_count = int(fallback_plan["descriptors"].get("figure_count", 0))
+    prompt_sections = scene_plan["prompt_sections"]
+    figure_count = int(scene_plan["descriptors"].get("figure_count", 0))
     if figure_count > 0:
         ordered_sections = [
             prompt_sections["people_directive"],
@@ -1390,13 +1891,7 @@ def build_final_prompt_from_language_pass(
             prompt_sections["people_directive"],
             prompt_sections["figure_variation_directive"],
         ]
-
-    sanitized_modifiers = sanitize_prompt_modifiers(
-        language_pass.get("prompt_modifiers"),
-        fallback=fallback_plan["descriptors"].get("figure_variation_modifiers", []),
-        force_occupied=figure_count > 0,
-    )
-    return ", ".join(ordered_sections + sanitized_modifiers)
+    return ", ".join(ordered_sections + prompt_modifiers)
 
 
 def build_scene_plan(
@@ -1409,23 +1904,31 @@ def build_scene_plan(
         return fallback_plan
 
     try:
-        language_pass = fetch_openai_language_pass(
+        scene_interpretation = fetch_openai_language_pass(
             openai_settings, smoothed, fallback_plan, empty_room_baseline
         )
-        sanitized_language_pass = sanitize_openai_language_pass(language_pass, fallback_plan)
-        live_lines = sanitized_language_pass["live_inference_lines"]
-        agent_preview = sanitized_language_pass["image_preview"]
-        if len(live_lines) > MAX_AI_LIVE_LINES:
-            live_lines = live_lines[:MAX_AI_LIVE_LINES]
-
-        result = dict(fallback_plan)
-        result["live_lines"] = live_lines
-        result["agent_preview"] = agent_preview
-        result["agent_notes"] = sanitized_language_pass["agent_notes"]
+        sanitized_scene = sanitize_scene_interpretation(scene_interpretation, fallback_plan)
+        descriptors = sanitized_scene["descriptors"]
+        prompt_sections = build_prompt_sections(descriptors)
+        result = {
+            "descriptors": descriptors,
+            "prompt_sections": prompt_sections,
+            "prompt": "",
+            "live_lines": sanitized_scene["live_inference_lines"],
+            "interpretation_source": "openai_scene_interpreter",
+            "agent_preview": sanitized_scene["image_preview"],
+            "agent_notes": sanitized_scene["agent_notes"],
+            "state_signature_descriptors": descriptors,
+        }
         result["prompt"] = build_final_prompt_from_language_pass(
-            fallback_plan, sanitized_language_pass
+            result,
+            sanitized_scene["prompt_modifiers"],
         )
-        result["interpretation_source"] = "openai_language_pass"
+        live_lines = result["live_lines"]
+        agent_preview = result["agent_preview"]
+        if len(live_lines) > MAX_AI_LIVE_LINES:
+            result["live_lines"] = live_lines[:MAX_AI_LIVE_LINES]
+        result["agent_preview"] = agent_preview
         return result
     except Exception as exc:
         fallback_result = dict(fallback_plan)
@@ -1434,18 +1937,18 @@ def build_scene_plan(
 
 
 def extract_change_metrics(smoothed):
-    light_percent = ((smoothed.get("light") or {}).get("percent"))
     bme_data = smoothed.get("bme688") or {}
     ld_data = smoothed.get("ld2410c") or {}
+    microphone_data = smoothed.get("usb_microphone") or {}
     detection_distance_cm = ld_data.get("detection_distance_cm")
     if detection_distance_cm is None:
         detection_distance_cm = ld_data.get("moving_distance_cm") or ld_data.get("stationary_distance_cm")
 
     return {
-        "light_percent": light_percent,
         "temperature_c": bme_data.get("temperature_c"),
         "humidity_pct": bme_data.get("humidity_pct"),
         "detection_distance_cm": detection_distance_cm,
+        "audio_activity_score": microphone_data.get("activity_score"),
     }
 
 
@@ -1488,6 +1991,7 @@ def build_state_signature(descriptors):
         "figure_count": descriptors["figure_count"],
         "lateral_bucket": lateral_bucket,
         "depth_bucket": depth_bucket,
+        "audio_activity": descriptors.get("audio_activity"),
     }
     return json.dumps(signature_fields, sort_keys=True)
 
@@ -1497,10 +2001,10 @@ def change_exceeds_threshold(previous_metrics, current_metrics):
         return True
 
     threshold_map = {
-        "light_percent": LIGHT_CHANGE_THRESHOLD,
         "temperature_c": TEMPERATURE_CHANGE_THRESHOLD,
         "humidity_pct": HUMIDITY_CHANGE_THRESHOLD,
         "detection_distance_cm": DISTANCE_CHANGE_THRESHOLD_CM,
+        "audio_activity_score": AUDIO_ACTIVITY_CHANGE_THRESHOLD,
     }
     for key, threshold in threshold_map.items():
         previous_value = previous_metrics.get(key)
@@ -1876,7 +2380,7 @@ def create_seed_contact_sheet(image_paths: list[Path], output_dir: Path) -> Path
         return None
 
 
-def wait_for_initial_frames(ser, frame_buffer):
+def wait_for_initial_frames(ser, frame_buffer, microphone_monitor=None):
     deadline = time.time() + SERIAL_STARTUP_SECONDS
 
     while time.time() < deadline and len(frame_buffer) < MIN_FRAMES_FOR_PROCESSING:
@@ -1887,7 +2391,7 @@ def wait_for_initial_frames(ser, frame_buffer):
         print(f"[PICO] {raw_line}")
         frame = parse_sensor_line(raw_line)
         if frame is not None:
-            frame_buffer.append(frame)
+            frame_buffer.append(attach_microphone_snapshot(frame, microphone_monitor))
 
     return len(frame_buffer) >= MIN_FRAMES_FOR_PROCESSING
 
@@ -2295,7 +2799,13 @@ def main():
     if not openai_settings.get("api_key"):
         openai_settings["enabled"] = False
     empty_room_baseline = load_empty_room_baseline()
+    microphone_monitor = build_microphone_monitor_from_env()
+    microphone_enabled = microphone_monitor.start()
     print_runtime_configuration(openai_settings)
+    if microphone_enabled:
+        print(f"USB microphone: {microphone_monitor.status_text}")
+    else:
+        print(f"USB microphone: {microphone_monitor.status_text}")
 
     token = load_hf_token()
     client = InferenceClient(provider="hf-inference", api_key=token)
@@ -2327,7 +2837,7 @@ def main():
             time.sleep(2)
             print(f"Waiting up to {SERIAL_STARTUP_SECONDS} seconds for Pico sensor packets...")
 
-            if not wait_for_initial_frames(ser, frame_buffer):
+            if not wait_for_initial_frames(ser, frame_buffer, microphone_monitor):
                 print(
                     "Connected to the Pico, but no valid SENSOR_DATA packets were received.",
                     file=sys.stderr,
@@ -2372,7 +2882,7 @@ def main():
                     print(f"[PICO] {raw_line}")
                     frame = parse_sensor_line(raw_line)
                     if frame is not None:
-                        frame_buffer.append(frame)
+                        frame_buffer.append(attach_microphone_snapshot(frame, microphone_monitor))
 
                 if len(frame_buffer) < MIN_FRAMES_FOR_PROCESSING:
                     continue
@@ -2412,6 +2922,7 @@ def main():
     except KeyboardInterrupt:
         print("\nStopped by user.")
     finally:
+        microphone_monitor.stop()
         cleanup_lock_file()
 
 
