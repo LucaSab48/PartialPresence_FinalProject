@@ -16,26 +16,23 @@ POLL_INTERVAL_MS = 700
 # Layout controls for projector-friendly presentation.
 LAYOUT_MODE = "side_panel"  # stacked or side_panel
 PANEL_TITLE = "LIVE INFERENCE"
-BODY_FONT_SIZE = 20
-TITLE_FONT_SIZE = 15
+BODY_FONT_SIZE = 22
+TITLE_FONT_SIZE = 16
 LINE_SPACING = 12
 SCREEN_MARGIN = 48
-CONTENT_GAP = 8
+CONTENT_GAP = 24
 TEXT_PANEL_RATIO = 0.26
-SIDE_PANEL_RATIO = 0.28
+SIDE_PANEL_RATIO = 0.22
 TEXT_PANEL_FILL = "#050505"
 TEXT_PANEL_BORDER = "#1a1a1a"
 TEXT_PANEL_TEXT_COLOR = "#f2f2f2"
 TEXT_PANEL_TITLE_COLOR = "#9d9d9d"
-TEXT_PANEL_PADDING_X = 60
+TEXT_PANEL_PADDING_X = 36
 TEXT_PANEL_PADDING_Y = 28
 TEXT_PANEL_BORDER_WIDTH = 1
 IMAGE_BACKGROUND = "#000000"
 MAX_TEXT_LINES = 6
 MAX_ERROR_LINES = 2
-MAX_WRAPPED_TEXT_LINES = 7
-
-PillowFont = ImageFont.ImageFont | ImageFont.FreeTypeFont
 
 
 def load_shared_state() -> dict | None:
@@ -101,10 +98,9 @@ class LatestImageDisplay:
         self.current_photo = None
         self.waiting_message_shown = False
         self.missing_folder_message_shown = False
-        self.last_logged_selection = None
 
-        self.body_font: PillowFont = ImageFont.load_default()
-        self.title_font: PillowFont = ImageFont.load_default()
+        self.body_font = ImageFont.load_default()
+        self.title_font = ImageFont.load_default()
         self.root.after(0, self.load_fonts)
         self.root.after(0, self.check_for_updates)
 
@@ -127,8 +123,8 @@ class LatestImageDisplay:
         self.root.destroy()
 
     def check_for_updates(self) -> None:
+        latest_image = self.get_latest_image()
         shared_state = load_shared_state()
-        latest_image = self.get_latest_image(shared_state)
 
         if latest_image is None:
             self.show_waiting_state(shared_state)
@@ -139,60 +135,20 @@ class LatestImageDisplay:
 
         self.root.after(POLL_INTERVAL_MS, self.check_for_updates)
 
-    def get_latest_image(self, shared_state: dict | None) -> Path | None:
-        current_image_path = None
-        selected_path = None
-        log_message = None
-        if shared_state and not shared_state.get("current_image_path"):
-            return None
-        if shared_state:
-            current_image_path = shared_state.get("current_image_path")
-            if current_image_path:
-                candidate = Path(current_image_path)
-                if candidate.exists() and candidate.suffix.lower() in SUPPORTED_EXTENSIONS:
-                    resolved = candidate.resolve()
-                    selected_path = resolved
-                    log_message = f"[DISPLAY_SELECT] source=shared_state current_image_path path={resolved}"
-
-        if selected_path is None and not IMAGE_FOLDER.exists():
+    def get_latest_image(self) -> Path | None:
+        if not IMAGE_FOLDER.exists():
             if not self.missing_folder_message_shown:
                 print(f"Waiting for images... Folder not found: {IMAGE_FOLDER}")
                 self.missing_folder_message_shown = True
-            invalid_text = f" invalid_current_image_path={current_image_path}" if current_image_path else ""
-            log_message = f"[DISPLAY_SELECT] source=none path=None reason=missing_folder{invalid_text}"
+            return None
 
-        if selected_path is None:
-            self.missing_folder_message_shown = False
+        self.missing_folder_message_shown = False
 
-            image_files = get_sorted_image_files()
-            if not image_files:
-                invalid_text = f" invalid_current_image_path={current_image_path}" if current_image_path else ""
-                log_message = f"[DISPLAY_SELECT] source=none path=None reason=no_images{invalid_text}"
-            else:
-                selected = image_files[0].resolve()
-                selected_path = selected
-                if current_image_path:
-                    log_message = (
-                        f"[DISPLAY_SELECT] source=fallback_newest_file path={selected} "
-                        f"invalid_current_image_path={current_image_path}"
-                    )
-                else:
-                    log_message = f"[DISPLAY_SELECT] source=fallback_newest_file path={selected}"
+        image_files = get_sorted_image_files()
+        if not image_files:
+            return None
 
-        if selected_path != self.last_logged_selection and log_message:
-            print(log_message)
-            self.last_logged_selection = selected_path
-
-        return selected_path
-
-    def get_current_state_image(self, shared_state: dict | None) -> Path | None:
-        if shared_state:
-            current_image_path = shared_state.get("current_image_path")
-            if current_image_path:
-                candidate = Path(current_image_path)
-                if candidate.exists() and candidate.suffix.lower() in SUPPORTED_EXTENSIONS:
-                    return candidate
-        return None
+        return image_files[0]
 
     def show_waiting_state(self, shared_state: dict | None) -> None:
         state_key = self.build_state_key(shared_state)
@@ -270,18 +226,9 @@ class LatestImageDisplay:
         lines = []
         if shared_state:
             lines = list(shared_state.get("live_inference_lines", []))[:MAX_TEXT_LINES]
-            agent_preview = shared_state.get("agent_preview")
-            if isinstance(agent_preview, str) and agent_preview.strip():
-                lines.append(agent_preview.strip())
             last_image_error = shared_state.get("last_image_error")
-            last_openai_error = shared_state.get("last_openai_error")
             if shared_state.get("image_generation_in_progress"):
-                lines.append("image refresh active")
-            if last_openai_error:
-                error_text = str(last_openai_error).replace("\n", " ").strip()
-                if len(error_text) > 140:
-                    error_text = f"{error_text[:137]}..."
-                lines.extend([f"OpenAI fallback active: {error_text}"][:MAX_ERROR_LINES])
+                lines.append("image refresh in progress")
             if last_image_error:
                 error_text = str(last_image_error).replace("\n", " ").strip()
                 if len(error_text) > 140:
@@ -290,7 +237,6 @@ class LatestImageDisplay:
                     [f"image generation error: {error_text}"][:MAX_ERROR_LINES]
                 )
 
-        lines = [line for line in lines if line][:MAX_TEXT_LINES]
         if not lines:
             return ["waiting for interpreted sensor state"]
         return lines
@@ -340,7 +286,7 @@ class LatestImageDisplay:
         box_width = max(1, box[2] - box[0])
         box_height = max(1, box[3] - box[1])
         image_width, image_height = image.size
-        scale = max(box_width / image_width, box_height / image_height)
+        scale = min(box_width / image_width, box_height / image_height)
         new_size = (
             max(1, int(image_width * scale)),
             max(1, int(image_height * scale)),
@@ -348,12 +294,7 @@ class LatestImageDisplay:
         resized_image = image.resize(new_size, Image.Resampling.LANCZOS)
         offset_x = box[0] + (box_width - new_size[0]) // 2
         offset_y = box[1] + (box_height - new_size[1]) // 2
-        canvas.paste(resized_image.crop((
-            max(0, -offset_x),
-            max(0, -offset_y),
-            max(0, -offset_x) + box_width,
-            max(0, -offset_y) + box_height,
-        )), (box[0], box[1]))
+        canvas.paste(resized_image, (offset_x, offset_y))
 
     def draw_text_panel(
         self, canvas: Image.Image, panel_box: tuple[int, int, int, int], shared_state: dict | None
@@ -377,7 +318,7 @@ class LatestImageDisplay:
             text_y += line_height + LINE_SPACING
 
     def wrap_text_lines(
-        self, draw: ImageDraw.ImageDraw, lines: list[str], font: PillowFont, max_width: int
+        self, draw: ImageDraw.ImageDraw, lines: list[str], font: ImageFont.ImageFont, max_width: int
     ) -> list[str]:
         wrapped_lines: list[str] = []
         for line in lines:
@@ -395,14 +336,10 @@ class LatestImageDisplay:
                     current_line = trial_line
                 else:
                     wrapped_lines.append(current_line)
-                    if len(wrapped_lines) >= MAX_WRAPPED_TEXT_LINES:
-                        return wrapped_lines[:MAX_WRAPPED_TEXT_LINES]
                     current_line = word
             wrapped_lines.append(current_line)
-            if len(wrapped_lines) >= MAX_WRAPPED_TEXT_LINES:
-                return wrapped_lines[:MAX_WRAPPED_TEXT_LINES]
 
-        return wrapped_lines[:MAX_WRAPPED_TEXT_LINES]
+        return wrapped_lines
 
     def hex_to_rgba(self, hex_value: str, alpha: int) -> tuple[int, int, int, int]:
         hex_value = hex_value.lstrip("#")

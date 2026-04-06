@@ -301,6 +301,7 @@ def build_shared_state(
         "interpreted_state": scene_plan["descriptors"],
         "prompt_sections": scene_plan["prompt_sections"],
         "image_prompt": scene_plan["prompt"],
+        "generation_controls": scene_plan.get("generation_controls"),
         "live_inference_lines": scene_plan["live_lines"],
         "interpretation_source": scene_plan.get("interpretation_source"),
         "last_openai_error": scene_plan.get("openai_error"),

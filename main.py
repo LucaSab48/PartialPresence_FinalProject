@@ -42,6 +42,11 @@ SEN_SENSOR_ADDRESS = 0x33
 SEN_MATRIX_8X8 = 8
 SEN_STARTUP_DELAY_MS = 1500
 SEN_WARMUP_READS = 2
+SEN_MOUNT_MODE = "ceiling_down"
+SEN_CEILING_HEIGHT_MM = 2400
+SEN_FLOOR_OCCUPANCY_DELTA_MM = 180
+SEN_FLOOR_NEAR_HEIGHT_MM = 250
+SEN_FLOOR_MID_HEIGHT_MM = 900
 
 REPORT_INTERVAL_MS = 2000
 
@@ -583,11 +588,40 @@ def read_sen0628(sensor):
     def close_count(readings, threshold_mm):
         return len([value for value in readings if 0 < value < threshold_mm])
 
+    def occupied_points(readings):
+        if SEN_MOUNT_MODE != "ceiling_down":
+            return 0
+        return len(
+            [
+                value
+                for value in readings
+                if 0 < value < 4000 and value <= (SEN_CEILING_HEIGHT_MM - SEN_FLOOR_OCCUPANCY_DELTA_MM)
+            ]
+        )
+
+    def height_above_floor_stats(readings):
+        if SEN_MOUNT_MODE != "ceiling_down":
+            return None, None
+        heights = [
+            SEN_CEILING_HEIGHT_MM - value
+            for value in readings
+            if 0 < value < 4000 and value <= SEN_CEILING_HEIGHT_MM
+        ]
+        if not heights:
+            return None, None
+        return safe_round(sum(heights) / len(heights)), max(heights)
+
     left_values = flatten_columns(0, 2)
     center_values = flatten_columns(2, 6)
     right_values = flatten_columns(6, 8)
+    front_values = rows[0] + rows[1]
+    mid_values = rows[2] + rows[3] + rows[4] + rows[5]
+    back_values = rows[6] + rows[7]
+    mean_obstruction_height_mm, max_obstruction_height_mm = height_above_floor_stats(values)
 
     return {
+        "mount_mode": SEN_MOUNT_MODE,
+        "ceiling_height_mm": SEN_CEILING_HEIGHT_MM if SEN_MOUNT_MODE == "ceiling_down" else None,
         "center_mm": values[center_index],
         "min_mm": min_value,
         "max_mm": max_value,
@@ -599,9 +633,57 @@ def read_sen0628(sensor):
         "left_close_points": close_count(left_values, 1600),
         "center_close_points": close_count(center_values, 1600),
         "right_close_points": close_count(right_values, 1600),
+        "left_occupied_points": occupied_points(left_values),
+        "center_occupied_points": occupied_points(center_values),
+        "right_occupied_points": occupied_points(right_values),
+        "front_zone_mm": mean_valid(front_values),
+        "mid_zone_mm": mean_valid(mid_values),
+        "back_zone_mm": mean_valid(back_values),
+        "front_occupied_points": occupied_points(front_values),
+        "mid_occupied_points": occupied_points(mid_values),
+        "back_occupied_points": occupied_points(back_values),
         "near_points": close_count(values, 1200),
         "mid_points": len([value for value in values if 1200 <= value < 2200]),
         "far_points": len([value for value in values if 2200 <= value < 4000]),
+        "floor_occupied_points": occupied_points(values),
+        "floor_clear_points": len(valid_values) - occupied_points(values),
+        "mean_obstruction_height_mm": mean_obstruction_height_mm,
+        "max_obstruction_height_mm": max_obstruction_height_mm,
+        "low_obstruction_points": len(
+            [
+                value
+                for value in values
+                if 0 < value < 4000
+                and value <= SEN_CEILING_HEIGHT_MM
+                and (SEN_CEILING_HEIGHT_MM - value) >= 0
+                and (SEN_CEILING_HEIGHT_MM - value) < SEN_FLOOR_NEAR_HEIGHT_MM
+            ]
+        )
+        if SEN_MOUNT_MODE == "ceiling_down"
+        else 0,
+        "mid_obstruction_points": len(
+            [
+                value
+                for value in values
+                if 0 < value < 4000
+                and value <= SEN_CEILING_HEIGHT_MM
+                and (SEN_CEILING_HEIGHT_MM - value) >= SEN_FLOOR_NEAR_HEIGHT_MM
+                and (SEN_CEILING_HEIGHT_MM - value) < SEN_FLOOR_MID_HEIGHT_MM
+            ]
+        )
+        if SEN_MOUNT_MODE == "ceiling_down"
+        else 0,
+        "tall_obstruction_points": len(
+            [
+                value
+                for value in values
+                if 0 < value < 4000
+                and value <= SEN_CEILING_HEIGHT_MM
+                and (SEN_CEILING_HEIGHT_MM - value) >= SEN_FLOOR_MID_HEIGHT_MM
+            ]
+        )
+        if SEN_MOUNT_MODE == "ceiling_down"
+        else 0,
     }
 
 

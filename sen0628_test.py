@@ -21,6 +21,9 @@ STARTUP_DELAY_MS = 1500
 WARMUP_READS = 2
 RESPONSE_TIMEOUT_MS = 8000
 MODE_SWITCH_DELAY_MS = 5000
+MOUNT_MODE = "ceiling_down"
+CEILING_HEIGHT_MM = 2400
+FLOOR_OCCUPANCY_DELTA_MM = 180
 
 
 def safe_i2c_scan(i2c):
@@ -119,6 +122,50 @@ def build_scene_summary(values):
 
     nearest_text = describe_distance(nearest_distance)
     return zone_info, occupancy_text, nearest_text, nearest_distance
+
+
+def build_floor_summary(values):
+    if MOUNT_MODE != "ceiling_down":
+        return None
+
+    rows = [
+        values[row_index * MATRIX_8X8 : (row_index + 1) * MATRIX_8X8]
+        for row_index in range(MATRIX_8X8)
+    ]
+
+    def occupied_count(readings):
+        return len(
+            [
+                value
+                for value in readings
+                if 0 < value < 4000 and value <= (CEILING_HEIGHT_MM - FLOOR_OCCUPANCY_DELTA_MM)
+            ]
+        )
+
+    left_values = []
+    center_values = []
+    right_values = []
+    for row in rows:
+        left_values.extend(row[0:2])
+        center_values.extend(row[2:6])
+        right_values.extend(row[6:8])
+
+    all_heights = [
+        CEILING_HEIGHT_MM - value
+        for value in values
+        if 0 < value < 4000 and value <= CEILING_HEIGHT_MM
+    ]
+    max_height = max(all_heights) if all_heights else None
+    mean_height = (sum(all_heights) / len(all_heights)) if all_heights else None
+
+    return {
+        "left": occupied_count(left_values),
+        "center": occupied_count(center_values),
+        "right": occupied_count(right_values),
+        "total": occupied_count(values),
+        "mean_height_mm": mean_height,
+        "max_height_mm": max_height,
+    }
 
 
 def recover_i2c_bus():
@@ -224,6 +271,10 @@ def main():
     )
     print("SEN0628:I2C_FREQ={}".format(I2C_FREQ))
     print("SEN0628:STARTUP_DELAY_MS={}".format(STARTUP_DELAY_MS))
+    print("SEN0628:MOUNT_MODE={}".format(MOUNT_MODE))
+    if MOUNT_MODE == "ceiling_down":
+        print("SEN0628:CEILING_HEIGHT_MM={}".format(CEILING_HEIGHT_MM))
+        print("SEN0628:FLOOR_OCCUPANCY_DELTA_MM={}".format(FLOOR_OCCUPANCY_DELTA_MM))
 
     i2c = None
     sensor = None
@@ -282,6 +333,7 @@ def main():
             max_value = max(valid_values) if valid_values else None
             valid_count = len(valid_values)
             zone_info, occupancy_text, nearest_text, nearest_distance = build_scene_summary(values)
+            floor_summary = build_floor_summary(values)
 
             print(
                 "SEN0628:CENTER_MM={},MIN_MM={},MAX_MM={},VALID_POINTS={}/64".format(
@@ -298,6 +350,18 @@ def main():
                 )
             )
             print("SEN0628:SCENE={}".format(occupancy_text))
+            if floor_summary is not None:
+                print(
+                    "SEN0628:FLOOR="
+                    "LEFT:{} | CENTER:{} | RIGHT:{} | TOTAL:{} | MEAN_HEIGHT={}mm | MAX_HEIGHT={}mm".format(
+                        floor_summary["left"],
+                        floor_summary["center"],
+                        floor_summary["right"],
+                        floor_summary["total"],
+                        int(floor_summary["mean_height_mm"]) if floor_summary["mean_height_mm"] is not None else "NONE",
+                        int(floor_summary["max_height_mm"]) if floor_summary["max_height_mm"] is not None else "NONE",
+                    )
+                )
             print(
                 "SEN0628:ZONES="
                 "LEFT:{}@{}mm | CENTER:{}@{}mm | RIGHT:{}@{}mm".format(

@@ -5,6 +5,7 @@ import sys
 import time
 import threading
 import atexit
+import hashlib
 from collections import Counter, deque
 from dataclasses import dataclass
 from datetime import datetime
@@ -47,8 +48,22 @@ MIN_FRAMES_FOR_PROCESSING = 3
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 IMAGE_WIDTH = 512
 IMAGE_HEIGHT = 512
-IMAGE_GUIDANCE_SCALE = 9.0
 IMAGE_NUM_INFERENCE_STEPS = 24
+IMAGE_NUM_INFERENCE_STEPS_MIN = 20
+IMAGE_NUM_INFERENCE_STEPS_MAX = 32
+IMAGE_TEMPERATURE_MIN = 0.2
+IMAGE_TEMPERATURE_MAX = 0.8
+IMAGE_TOP_P_MIN = 0.7
+IMAGE_TOP_P_MAX = 0.95
+IMAGE_GUIDANCE_SCALE_MIN = 7.0
+IMAGE_GUIDANCE_SCALE_MAX = 10.5
+IMAGE_GUIDANCE_VARIATION_OFFSETS = [-1.1, -0.7, -0.35, 0.0, 0.35, 0.7, 1.1]
+IMAGE_STEP_VARIATION_OFFSETS = [-4, -2, -1, 0, 1, 2, 4]
+IMAGE_UNCERTAINTY_DEFAULT = 0.22
+IMAGE_UNCERTAINTY_GUIDANCE_BIAS = 0.25
+IMAGE_UNCERTAINTY_TEMPERATURE_CURVE = 1.0
+IMAGE_UNCERTAINTY_TOP_P_CURVE = 0.9
+IMAGE_UNCERTAINTY_GUIDANCE_CURVE = 1.15
 DEFAULT_EMPTY_IMAGE_SEED = 23
 DEFAULT_OCCUPIED_IMAGE_SEED = 23
 SEED_TEST_MODE = False
@@ -112,6 +127,243 @@ class InterpretationCoordinator:
     image_generation_in_progress: bool = False
     image_generation_started_at: float = 0.0
     pending_image_result: dict[str, Any] | None = None
+
+
+def clamp(value: float, minimum: float, maximum: float) -> float:
+    return max(minimum, min(maximum, value))
+
+
+def clamp_int(value: int, minimum: int, maximum: int) -> int:
+    return max(minimum, min(maximum, int(value)))
+
+
+def lerp(start: float, end: float, amount: float) -> float:
+    return start + ((end - start) * amount)
+
+
+def normalize_unit_interval(value: Any, fallback: float) -> float:
+    if isinstance(value, bool):
+        return fallback
+    if isinstance(value, (int, float)):
+        return clamp(float(value), 0.0, 1.0)
+    return fallback
+
+
+def round_generation_value(value: float) -> float:
+    return round(float(value), 3)
+
+
+def stable_variation_index(payload: dict[str, Any], modulo: int) -> int:
+    if modulo <= 1:
+        return 0
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+    return int(digest[:8], 16) % modulo
+
+
+def quantize_numeric_bucket(value: Any, step: float) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if step <= 0:
+        return int(round(float(value)))
+    return int(round(float(value) / step))
+
+
+def build_sensor_variation_profile(
+    smoothed: dict[str, Any],
+    descriptors: dict[str, Any],
+) -> dict[str, Any]:
+    bme_data = smoothed.get("bme688") or {}
+    ld_data = smoothed.get("ld2410c") or {}
+    sen_data = smoothed.get("sen0628") or {}
+    microphone_data = smoothed.get("usb_microphone") or {}
+    fingerprint_payload = {
+        "figure_count": int(descriptors.get("figure_count", 0) or 0),
+        "layout_mode": str(descriptors.get("layout_mode", "empty")),
+        "primary_zone": str(descriptors.get("primary_zone", "center")),
+        "depth_band": str(descriptors.get("depth_band", "mid-room")),
+        "presence_activity": str(descriptors.get("presence_activity", "")),
+        "audio_activity": str(descriptors.get("audio_activity", "")),
+        "temperature_bucket": quantize_numeric_bucket(bme_data.get("temperature_c"), 0.6),
+        "humidity_bucket": quantize_numeric_bucket(bme_data.get("humidity_pct"), 2.5),
+        "distance_bucket": quantize_numeric_bucket(ld_data.get("detection_distance_cm"), 20.0),
+        "moving_bucket": quantize_numeric_bucket(ld_data.get("moving_energy"), 10.0),
+        "stationary_bucket": quantize_numeric_bucket(ld_data.get("stationary_energy"), 10.0),
+        "audio_bucket": quantize_numeric_bucket(microphone_data.get("activity_score"), 0.8),
+        "left_zone_bucket": quantize_numeric_bucket(sen_data.get("left_zone_mm"), 140.0),
+        "center_zone_bucket": quantize_numeric_bucket(sen_data.get("center_zone_mm"), 140.0),
+        "right_zone_bucket": quantize_numeric_bucket(sen_data.get("right_zone_mm"), 140.0),
+        "near_points_bucket": quantize_numeric_bucket(sen_data.get("near_points"), 1.0),
+        "mid_points_bucket": quantize_numeric_bucket(sen_data.get("mid_points"), 1.0),
+        "far_points_bucket": quantize_numeric_bucket(sen_data.get("far_points"), 1.0),
+    }
+    variation_index = stable_variation_index(fingerprint_payload, len(IMAGE_GUIDANCE_VARIATION_OFFSETS))
+    empty_room_modifiers = [
+        "subtle polished floor reflections",
+        "slightly cooler gallery light",
+        "slightly warmer wall light",
+        "soft shadow falloff across the floor",
+        "clean open floor with faint depth cues",
+    ]
+    occupied_posture_modifiers = [
+        "natural upright posture",
+        "slight weight shift through the hips and shoulders",
+        "one figure angled partly sideways",
+        "subtle mid-step stance",
+        "casual standing posture with relaxed arms",
+    ]
+    occupied_clothing_modifiers = [
+        "muted everyday clothing",
+        "dark casual clothing with natural folds",
+        "light tops with darker trousers",
+        "layered neutral clothing",
+        "mixed casual outfits with realistic fabric texture",
+    ]
+    occupied_spacing_modifiers = [
+        "clear separation between bodies",
+        "mild overlap and natural occlusion",
+        "open floor visible between figures",
+        "slightly asymmetrical spacing",
+        "one figure more dominant in scale",
+    ]
+
+    if int(descriptors.get("figure_count", 0) or 0) <= 0:
+        prompt_modifiers = [
+            empty_room_modifiers[stable_variation_index({"fingerprint": fingerprint_payload, "slot": 0}, len(empty_room_modifiers))],
+            empty_room_modifiers[stable_variation_index({"fingerprint": fingerprint_payload, "slot": 1}, len(empty_room_modifiers))],
+        ]
+    else:
+        prompt_modifiers = [
+            occupied_posture_modifiers[
+                stable_variation_index({"fingerprint": fingerprint_payload, "slot": 0}, len(occupied_posture_modifiers))
+            ],
+            occupied_clothing_modifiers[
+                stable_variation_index({"fingerprint": fingerprint_payload, "slot": 1}, len(occupied_clothing_modifiers))
+            ],
+            occupied_spacing_modifiers[
+                stable_variation_index({"fingerprint": fingerprint_payload, "slot": 2}, len(occupied_spacing_modifiers))
+            ],
+        ]
+
+    return {
+        "fingerprint": json.dumps(fingerprint_payload, sort_keys=True),
+        "variation_index": variation_index,
+        "prompt_modifiers": prompt_modifiers,
+    }
+
+
+def derive_uncertainty_score_from_descriptors(descriptors: dict[str, Any]) -> float:
+    uncertainty = IMAGE_UNCERTAINTY_DEFAULT
+    if descriptors.get("presence_activity") == "presence uncertain":
+        uncertainty += 0.33
+    if descriptors.get("presence_count") == "presence uncertain":
+        uncertainty += 0.22
+    if descriptors.get("layout_mode") == "ambiguous":
+        uncertainty += 0.12
+    spatial_certainty = str(descriptors.get("spatial_certainty", "")).lower()
+    if "uncertain" in spatial_certainty or "rough" in spatial_certainty:
+        uncertainty += 0.12
+    active_zone_count = len(descriptors.get("active_zones") or [])
+    if active_zone_count >= 3:
+        uncertainty += 0.06
+    if int(descriptors.get("figure_count", 0)) == 0 and descriptors.get("presence_activity") != "no presence":
+        uncertainty += 0.08
+    return clamp(uncertainty, 0.0, 1.0)
+
+
+def build_generation_controls_from_uncertainty(
+    uncertainty_score: float,
+    variation_fingerprint: str | None = None,
+) -> dict[str, float | int]:
+    normalized_uncertainty = clamp(float(uncertainty_score), 0.0, 1.0)
+    temperature_amount = normalized_uncertainty ** IMAGE_UNCERTAINTY_TEMPERATURE_CURVE
+    top_p_amount = normalized_uncertainty ** IMAGE_UNCERTAINTY_TOP_P_CURVE
+    guidance_amount = normalized_uncertainty ** IMAGE_UNCERTAINTY_GUIDANCE_CURVE
+    guidance_floor_mix = IMAGE_UNCERTAINTY_GUIDANCE_BIAS + (
+        (1.0 - IMAGE_UNCERTAINTY_GUIDANCE_BIAS) * (1.0 - guidance_amount)
+    )
+    guidance_floor_mix = clamp(guidance_floor_mix, 0.0, 1.0)
+    guidance_scale = lerp(IMAGE_GUIDANCE_SCALE_MIN, IMAGE_GUIDANCE_SCALE_MAX, guidance_floor_mix)
+    num_inference_steps = IMAGE_NUM_INFERENCE_STEPS
+
+    if variation_fingerprint:
+        variation_payload = {"variation_fingerprint": variation_fingerprint}
+        guidance_scale += IMAGE_GUIDANCE_VARIATION_OFFSETS[
+            stable_variation_index(variation_payload, len(IMAGE_GUIDANCE_VARIATION_OFFSETS))
+        ]
+        num_inference_steps = clamp_int(
+            IMAGE_NUM_INFERENCE_STEPS
+            + IMAGE_STEP_VARIATION_OFFSETS[
+                stable_variation_index(
+                    {"variation_fingerprint": variation_fingerprint, "mode": "steps"},
+                    len(IMAGE_STEP_VARIATION_OFFSETS),
+                )
+            ],
+            IMAGE_NUM_INFERENCE_STEPS_MIN,
+            IMAGE_NUM_INFERENCE_STEPS_MAX,
+        )
+
+    return {
+        "uncertainty_score": round_generation_value(normalized_uncertainty),
+        "temperature": round_generation_value(
+            lerp(IMAGE_TEMPERATURE_MIN, IMAGE_TEMPERATURE_MAX, temperature_amount)
+        ),
+        "top_p": round_generation_value(lerp(IMAGE_TOP_P_MIN, IMAGE_TOP_P_MAX, top_p_amount)),
+        "guidance_scale": round_generation_value(
+            clamp(guidance_scale, IMAGE_GUIDANCE_SCALE_MIN, IMAGE_GUIDANCE_SCALE_MAX)
+        ),
+        "num_inference_steps": num_inference_steps,
+    }
+
+
+def sanitize_generation_controls(
+    scene_interpretation: dict[str, Any],
+    fallback_descriptors: dict[str, Any],
+) -> dict[str, float | int]:
+    fallback_controls = build_generation_controls_from_uncertainty(
+        derive_uncertainty_score_from_descriptors(fallback_descriptors),
+        str((fallback_descriptors.get("sensor_variation_profile") or {}).get("fingerprint") or ""),
+    )
+    uncertainty_score = normalize_unit_interval(
+        scene_interpretation.get("uncertainty_score"),
+        fallback_controls["uncertainty_score"],
+    )
+    generation_controls = scene_interpretation.get("generation_controls")
+    if not isinstance(generation_controls, dict):
+        generation_controls = {}
+
+    default_controls = build_generation_controls_from_uncertainty(uncertainty_score)
+    temperature = generation_controls.get("temperature", default_controls["temperature"])
+    top_p = generation_controls.get("top_p", default_controls["top_p"])
+    guidance_scale = generation_controls.get("guidance_scale", default_controls["guidance_scale"])
+    num_inference_steps = generation_controls.get(
+        "num_inference_steps",
+        default_controls["num_inference_steps"],
+    )
+
+    if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
+        temperature = default_controls["temperature"]
+    if isinstance(top_p, bool) or not isinstance(top_p, (int, float)):
+        top_p = default_controls["top_p"]
+    if isinstance(guidance_scale, bool) or not isinstance(guidance_scale, (int, float)):
+        guidance_scale = default_controls["guidance_scale"]
+    if isinstance(num_inference_steps, bool) or not isinstance(num_inference_steps, (int, float)):
+        num_inference_steps = default_controls["num_inference_steps"]
+
+    return {
+        "uncertainty_score": round_generation_value(uncertainty_score),
+        "temperature": round_generation_value(
+            clamp(float(temperature), IMAGE_TEMPERATURE_MIN, IMAGE_TEMPERATURE_MAX)
+        ),
+        "top_p": round_generation_value(clamp(float(top_p), IMAGE_TOP_P_MIN, IMAGE_TOP_P_MAX)),
+        "guidance_scale": round_generation_value(
+            clamp(float(guidance_scale), IMAGE_GUIDANCE_SCALE_MIN, IMAGE_GUIDANCE_SCALE_MAX)
+        ),
+        "num_inference_steps": clamp_int(
+            int(round(float(num_inference_steps))),
+            IMAGE_NUM_INFERENCE_STEPS_MIN,
+            IMAGE_NUM_INFERENCE_STEPS_MAX,
+        ),
+    }
 
 
 def json_text(value: object) -> str:
@@ -287,6 +539,8 @@ def smooth_frames(frames):
         "ld2410c_back": back_summary,
         "ld2410c": combined_ld_summary,
         "sen0628": {
+            "mount_mode": pick_mode([item.get("mount_mode") for item in sen_frames]),
+            "ceiling_height_mm": numeric_mean([item.get("ceiling_height_mm") for item in sen_frames]),
             "center_mm": numeric_mean([item.get("center_mm") for item in sen_frames]),
             "min_mm": numeric_mean([item.get("min_mm") for item in sen_frames]),
             "max_mm": numeric_mean([item.get("max_mm") for item in sen_frames]),
@@ -298,9 +552,25 @@ def smooth_frames(frames):
             "left_close_points": numeric_mean([item.get("left_close_points") for item in sen_frames]),
             "center_close_points": numeric_mean([item.get("center_close_points") for item in sen_frames]),
             "right_close_points": numeric_mean([item.get("right_close_points") for item in sen_frames]),
+            "left_occupied_points": numeric_mean([item.get("left_occupied_points") for item in sen_frames]),
+            "center_occupied_points": numeric_mean([item.get("center_occupied_points") for item in sen_frames]),
+            "right_occupied_points": numeric_mean([item.get("right_occupied_points") for item in sen_frames]),
+            "front_zone_mm": numeric_mean([item.get("front_zone_mm") for item in sen_frames]),
+            "mid_zone_mm": numeric_mean([item.get("mid_zone_mm") for item in sen_frames]),
+            "back_zone_mm": numeric_mean([item.get("back_zone_mm") for item in sen_frames]),
+            "front_occupied_points": numeric_mean([item.get("front_occupied_points") for item in sen_frames]),
+            "mid_occupied_points": numeric_mean([item.get("mid_occupied_points") for item in sen_frames]),
+            "back_occupied_points": numeric_mean([item.get("back_occupied_points") for item in sen_frames]),
             "near_points": numeric_mean([item.get("near_points") for item in sen_frames]),
             "mid_points": numeric_mean([item.get("mid_points") for item in sen_frames]),
             "far_points": numeric_mean([item.get("far_points") for item in sen_frames]),
+            "floor_occupied_points": numeric_mean([item.get("floor_occupied_points") for item in sen_frames]),
+            "floor_clear_points": numeric_mean([item.get("floor_clear_points") for item in sen_frames]),
+            "mean_obstruction_height_mm": numeric_mean([item.get("mean_obstruction_height_mm") for item in sen_frames]),
+            "max_obstruction_height_mm": numeric_mean([item.get("max_obstruction_height_mm") for item in sen_frames]),
+            "low_obstruction_points": numeric_mean([item.get("low_obstruction_points") for item in sen_frames]),
+            "mid_obstruction_points": numeric_mean([item.get("mid_obstruction_points") for item in sen_frames]),
+            "tall_obstruction_points": numeric_mean([item.get("tall_obstruction_points") for item in sen_frames]),
         }
         if sen_frames
         else None,
@@ -583,7 +853,7 @@ def classify_depth_band(ld_data, sen_data):
         if distance_cm is None:
             distance_cm = ld_data.get("moving_distance_cm") or ld_data.get("stationary_distance_cm")
 
-    if distance_cm is None and sen_data:
+    if distance_cm is None and sen_data and sen_data.get("mount_mode") != "ceiling_down":
         center_mm = sen_data.get("center_mm")
         mean_mm = sen_data.get("mean_mm")
         if center_mm is not None:
@@ -600,6 +870,49 @@ def classify_depth_band(ld_data, sen_data):
     return "back"
 
 
+def sen0628_is_ceiling_mounted(sen_data):
+    return bool(sen_data) and str(sen_data.get("mount_mode") or "").lower() == "ceiling_down"
+
+
+def sen0628_zone_strengths(sen_data):
+    if sen0628_is_ceiling_mounted(sen_data):
+        return {
+            "left": (sen_data or {}).get("left_occupied_points") or 0,
+            "center": (sen_data or {}).get("center_occupied_points") or 0,
+            "right": (sen_data or {}).get("right_occupied_points") or 0,
+        }
+    return {
+        "left": (sen_data or {}).get("left_close_points") or 0,
+        "center": (sen_data or {}).get("center_close_points") or 0,
+        "right": (sen_data or {}).get("right_close_points") or 0,
+    }
+
+
+def sen0628_zone_distance_map(sen_data):
+    return {
+        "left": (sen_data or {}).get("left_zone_mm"),
+        "center": (sen_data or {}).get("center_zone_mm"),
+        "right": (sen_data or {}).get("right_zone_mm"),
+    }
+
+
+def sen0628_depth_phrase_for_ceiling_mount(sen_data):
+    if not sen0628_is_ceiling_mounted(sen_data):
+        return None
+    max_height = sen_data.get("max_obstruction_height_mm")
+    mean_height = sen_data.get("mean_obstruction_height_mm")
+    height_mm = max_height if isinstance(max_height, (int, float)) else mean_height
+    if not isinstance(height_mm, (int, float)):
+        return "close to the floor plane"
+    if height_mm < 120:
+        return "very close to the floor plane"
+    if height_mm < 450:
+        return "slightly raised from the floor"
+    if height_mm < 1100:
+        return "rising clearly from the floor"
+    return "reaching high into the sensing volume"
+
+
 def estimate_people_layout(ld_data, sen_data, presence_activity, presence_count):
     if presence_activity == "no presence" or presence_count == "no people":
         return {
@@ -613,11 +926,7 @@ def estimate_people_layout(ld_data, sen_data, presence_activity, presence_count)
             "layout_mode": "empty",
         }
 
-    zone_strengths = {
-        "left": (sen_data or {}).get("left_close_points") or 0,
-        "center": (sen_data or {}).get("center_close_points") or 0,
-        "right": (sen_data or {}).get("right_close_points") or 0,
-    }
+    zone_strengths = sen0628_zone_strengths(sen_data)
     sorted_zones = sorted(zone_strengths.items(), key=lambda item: item[1], reverse=True)
     active_zones = [name for name, value in sorted_zones if value >= 3]
     primary_zone = sorted_zones[0][0]
@@ -805,22 +1114,16 @@ def interpret_sen0628_spatial_estimate(sen_data):
     if not sen_data:
         return "SEN0628 spatial estimate unavailable"
 
-    zone_close_counts = {
-        "left": sen_data.get("left_close_points") or 0,
-        "center": sen_data.get("center_close_points") or 0,
-        "right": sen_data.get("right_close_points") or 0,
-    }
+    zone_close_counts = sen0628_zone_strengths(sen_data)
     strongest_zone = max(zone_close_counts.items(), key=lambda item: item[1])[0]
     strongest_value = zone_close_counts[strongest_zone]
     active_zones = [name for name, count in zone_close_counts.items() if count >= 3]
-    zone_distance_map = {
-        "left": sen_data.get("left_zone_mm"),
-        "center": sen_data.get("center_zone_mm"),
-        "right": sen_data.get("right_zone_mm"),
-    }
+    zone_distance_map = sen0628_zone_distance_map(sen_data)
     strongest_distance = zone_distance_map.get(strongest_zone)
 
-    if strongest_distance is None:
+    if sen0628_is_ceiling_mounted(sen_data):
+        depth_text = sen0628_depth_phrase_for_ceiling_mount(sen_data)
+    elif strongest_distance is None:
         depth_text = "with uncertain depth"
     elif strongest_distance < 900:
         depth_text = "close to the sensor plane"
@@ -830,16 +1133,28 @@ def interpret_sen0628_spatial_estimate(sen_data):
         depth_text = "deeper in the room"
 
     if strongest_value < 2:
+        if sen0628_is_ceiling_mounted(sen_data):
+            return "SEN0628 suggests only a weak floor trace"
         return "SEN0628 suggests only a weak central trace"
     if len(active_zones) >= 3:
+        if sen0628_is_ceiling_mounted(sen_data):
+            return f"SEN0628 suggests floor occupancy spread across the mapped area, {depth_text}"
         return f"SEN0628 suggests occupancy spread across the room, {depth_text}"
     if len(active_zones) == 2:
         zone_pair = " and ".join(active_zones)
+        if sen0628_is_ceiling_mounted(sen_data):
+            return f"SEN0628 suggests floor occupancy shared across the {zone_pair} floor zones, {depth_text}"
         return f"SEN0628 suggests occupancy shared across the {zone_pair} zones, {depth_text}"
     if strongest_zone == "left":
+        if sen0628_is_ceiling_mounted(sen_data):
+            return f"SEN0628 suggests a floor footprint concentrated on the left side, {depth_text}"
         return f"SEN0628 suggests occupancy concentrated on the left side, {depth_text}"
     if strongest_zone == "right":
+        if sen0628_is_ceiling_mounted(sen_data):
+            return f"SEN0628 suggests a floor footprint concentrated on the right side, {depth_text}"
         return f"SEN0628 suggests occupancy concentrated on the right side, {depth_text}"
+    if sen0628_is_ceiling_mounted(sen_data):
+        return f"SEN0628 suggests a floor footprint concentrated near the center, {depth_text}"
     return f"SEN0628 suggests occupancy concentrated near the center, {depth_text}"
 
 
@@ -847,11 +1162,7 @@ def sen0628_location_detail(sen_data):
     if not sen_data:
         return None
 
-    zone_strengths = {
-        "left": sen_data.get("left_close_points") or 0,
-        "center": sen_data.get("center_close_points") or 0,
-        "right": sen_data.get("right_close_points") or 0,
-    }
+    zone_strengths = sen0628_zone_strengths(sen_data)
     strongest_zone = max(zone_strengths.items(), key=lambda item: item[1])[0]
     strongest_value = zone_strengths[strongest_zone]
     sorted_strengths = sorted(zone_strengths.values(), reverse=True)
@@ -859,17 +1170,27 @@ def sen0628_location_detail(sen_data):
     active_zones = [name for name, value in zone_strengths.items() if value >= 3]
 
     if strongest_value < 2:
+        if sen0628_is_ceiling_mounted(sen_data):
+            return "with only a faint floor trace"
         return "with only a vague central trace"
     if len(active_zones) >= 3:
+        if sen0628_is_ceiling_mounted(sen_data):
+            return "spread across the floor map"
         return "spread across the full field of view"
     if len(active_zones) == 2:
+        if sen0628_is_ceiling_mounted(sen_data):
+            return "distributed across adjacent floor zones"
         return "distributed across adjacent zones"
     if strongest_value - second_value <= 1 and strongest_value >= 3:
+        if sen0628_is_ceiling_mounted(sen_data):
+            return "bridging between floor zones"
         return "hovering between zones"
     if strongest_zone == "left":
         return "biased toward the left side"
     if strongest_zone == "right":
         return "biased toward the right side"
+    if sen0628_is_ceiling_mounted(sen_data):
+        return "centered under the sensor"
     return "centered in front of the system"
 
 
@@ -877,10 +1198,11 @@ def interpret_sen0628_figure_side(sen_data):
     if not sen_data:
         return "middle"
 
+    raw_zone_strengths = sen0628_zone_strengths(sen_data)
     zone_strengths = {
-        "left": sen_data.get("left_close_points") or 0,
-        "middle": sen_data.get("center_close_points") or 0,
-        "right": sen_data.get("right_close_points") or 0,
+        "left": raw_zone_strengths["left"],
+        "middle": raw_zone_strengths["center"],
+        "right": raw_zone_strengths["right"],
     }
     strongest_zone = max(zone_strengths.items(), key=lambda item: item[1])[0]
     strongest_value = zone_strengths[strongest_zone]
@@ -899,7 +1221,7 @@ def interpret_presence_location(ld_data, sen_data, ld_zone_activity=None):
         if distance_cm is None:
             distance_cm = ld_data.get("moving_distance_cm") or ld_data.get("stationary_distance_cm")
 
-    if distance_cm is None and sen_data:
+    if distance_cm is None and sen_data and not sen0628_is_ceiling_mounted(sen_data):
         center_mm = sen_data.get("center_mm")
         mean_mm = sen_data.get("mean_mm")
         if center_mm is not None:
@@ -907,7 +1229,9 @@ def interpret_presence_location(ld_data, sen_data, ld_zone_activity=None):
         elif mean_mm is not None:
             distance_cm = mean_mm / 10.0
 
-    if distance_cm is None:
+    if distance_cm is None and sen0628_is_ceiling_mounted(sen_data):
+        depth_phrase = sen0628_depth_phrase_for_ceiling_mount(sen_data) or "close to the floor plane"
+    elif distance_cm is None:
         depth_phrase = "at an uncertain depth"
     elif distance_cm < 90:
         depth_phrase = "very close to the sensing system"
@@ -970,13 +1294,30 @@ def interpret_spatial_impression(ld_data, sen_data, ld_zone_activity=None):
         if target_state == "NO_TARGET" and out_state == 0:
             return "open, empty, and waiting"
 
+    if sen0628_is_ceiling_mounted(sen_data):
+        occupied_points = (sen_data or {}).get("floor_occupied_points") or 0
+        occupied_zone_counts = [
+            (sen_data or {}).get("left_occupied_points") or 0,
+            (sen_data or {}).get("center_occupied_points") or 0,
+            (sen_data or {}).get("right_occupied_points") or 0,
+        ]
+        occupied_zones = sum(1 for value in occupied_zone_counts if value >= 3)
+        tall_points = (sen_data or {}).get("tall_obstruction_points") or 0
+        if len((ld_zone_activity or {}).get("active_zones") or []) >= 2:
+            return "layered across the floor plan"
+        if occupied_points >= 18 and occupied_zones >= 2:
+            return "broad floor coverage"
+        if tall_points >= 8:
+            return "vertically prominent from overhead"
+        if occupied_zones >= 2:
+            return "distributed across the floor"
+        if occupied_points >= 4:
+            return "localized floor activity"
+        return "mostly clear floor plane"
+
     near_points = (sen_data or {}).get("near_points") or 0
     far_points = (sen_data or {}).get("far_points") or 0
-    zone_counts = [
-        (sen_data or {}).get("left_close_points") or 0,
-        (sen_data or {}).get("center_close_points") or 0,
-        (sen_data or {}).get("right_close_points") or 0,
-    ]
+    zone_counts = list(sen0628_zone_strengths(sen_data).values())
     occupied_zones = sum(1 for value in zone_counts if value >= 3)
     detection_distance = (ld_data or {}).get("detection_distance_cm")
 
@@ -1190,6 +1531,10 @@ def interpret_sensor_state(smoothed):
         list(descriptors["active_zones"]),
         str(descriptors["primary_zone"]),
     )
+    descriptors["uncertainty_score"] = round_generation_value(
+        derive_uncertainty_score_from_descriptors(descriptors)
+    )
+    descriptors["sensor_variation_profile"] = build_sensor_variation_profile(smoothed, descriptors)
     descriptors["figure_variation_modifiers"] = build_figure_variation_modifiers(descriptors)
     return descriptors
 
@@ -1279,13 +1624,18 @@ def build_background_continuity_directive() -> str:
 
 
 def build_figure_variation_directive(descriptors: dict[str, Any]) -> str:
-    modifiers = descriptors.get("figure_variation_modifiers") or []
+    modifiers = list(descriptors.get("figure_variation_modifiers") or [])
+    sensor_variation_profile = descriptors.get("sensor_variation_profile") or {}
+    sensor_modifiers = sensor_variation_profile.get("prompt_modifiers") or []
+    for modifier in sensor_modifiers:
+        if isinstance(modifier, str) and modifier not in modifiers:
+            modifiers.append(modifier)
     modifier_text = ", ".join(str(item) for item in modifiers if isinstance(item, str))
     if not modifier_text:
         modifier_text = "room retained, occupancy pattern revised"
     return (
         "treat human figures as the primary changing element, allow variation in lateral placement, depth placement, spacing, "
-        f"scale, clustering, and separation while keeping the room broadly stable, {modifier_text}"
+        f"scale, clustering, separation, pose, and clothing while keeping the room broadly stable, {modifier_text}"
     )
 
 
@@ -1315,11 +1665,16 @@ def build_rule_based_scene_plan(smoothed: dict[str, Any]) -> dict[str, Any]:
     prompt_sections = build_prompt_sections(descriptors)
     prompt = build_image_prompt(descriptors)
     live_lines = build_live_inference_lines(descriptors)
+    generation_controls = build_generation_controls_from_uncertainty(
+        derive_uncertainty_score_from_descriptors(descriptors),
+        str((descriptors.get("sensor_variation_profile") or {}).get("fingerprint") or ""),
+    )
     return {
         "descriptors": descriptors,
         "prompt_sections": prompt_sections,
         "prompt": prompt,
         "live_lines": live_lines,
+        "generation_controls": generation_controls,
         "interpretation_source": "rule_based",
         "agent_preview": None,
         "agent_notes": [],
@@ -1540,6 +1895,7 @@ def sanitize_scene_interpretation(
         ),
         max_length=68,
     )
+    generation_controls = sanitize_generation_controls(scene_interpretation, descriptors)
 
     return {
         "descriptors": descriptors,
@@ -1547,6 +1903,7 @@ def sanitize_scene_interpretation(
         "agent_notes": agent_notes,
         "prompt_modifiers": prompt_modifiers,
         "image_preview": image_preview,
+        "generation_controls": generation_controls,
     }
 
 
@@ -1802,7 +2159,7 @@ def fetch_openai_language_pass(
         "Return JSON only with these keys: "
         "presence_activity, presence_count, figure_count, presence_location, primary_zone, secondary_zone, "
         "active_zones, depth_band, layout_mode, placement_summary, placement_prompt, spatial_certainty, "
-        "live_inference_lines, image_preview, agent_notes, prompt_modifiers. "
+        "live_inference_lines, image_preview, agent_notes, prompt_modifiers, uncertainty_score, generation_controls. "
         "Allowed values: "
         "presence_activity in [no presence, still presence, active presence, intermittent movement, presence uncertain]; "
         "presence_count in [no people, one person, two people, presence uncertain]; "
@@ -1821,6 +2178,10 @@ def fetch_openai_language_pass(
         "prompt_modifiers should prioritize visible figure variation such as count, spacing, clustering, side bias, depth, and scale while keeping the room broadly consistent; "
         "keep prompt_modifiers concise rather than prose; "
         "you may invent new wording instead of copying stock phrases; "
+        "uncertainty_score must be a number from 0.0 to 1.0 representing how uncertain your interpretation is; "
+        "higher uncertainty should usually increase temperature and top_p modestly while reducing guidance_scale modestly; "
+        "generation_controls must be an object with numeric temperature, top_p, guidance_scale values; "
+        "keep generation_controls restrained and close to the room-consistency goal rather than pushing into surreal abstraction; "
         "If the evidence is ambiguous, use presence uncertain and cautious placement phrasing rather than guessing. "
         "do not include markdown fences."
     )
@@ -1915,6 +2276,7 @@ def build_scene_plan(
             "prompt_sections": prompt_sections,
             "prompt": "",
             "live_lines": sanitized_scene["live_inference_lines"],
+            "generation_controls": sanitized_scene["generation_controls"],
             "interpretation_source": "openai_scene_interpreter",
             "agent_preview": sanitized_scene["image_preview"],
             "agent_notes": sanitized_scene["agent_notes"],
@@ -2024,6 +2386,7 @@ def build_shared_state_payload(
     live_lines,
     prompt,
     prompt_sections,
+    generation_controls,
     interpretation_source,
     agent_preview,
     agent_notes,
@@ -2053,6 +2416,7 @@ def build_shared_state_payload(
         "agent_notes": agent_notes,
         "image_prompt": prompt,
         "prompt_sections": prompt_sections,
+        "generation_controls": generation_controls,
         "state_signature": coordinator.current_signature,
         "stable_signature": coordinator.stable_signature,
         "last_meaningful_change_time": coordinator.last_meaningful_change_time,
@@ -2164,6 +2528,7 @@ def build_generation_metadata(
     descriptors,
     prompt,
     prompt_sections,
+    generation_controls,
     seed: int,
     seed_test_mode: bool,
     timestamp: datetime,
@@ -2175,6 +2540,7 @@ def build_generation_metadata(
         "final_prompt": prompt,
         "prompt_sections": prompt_sections,
         "negative_prompt": prompt_sections.get("negative_prompt", OPTIONAL_TEXT_UI_EXCLUSION_NEGATIVE_PROMPT),
+        "generation_controls": generation_controls,
         "interpreted_descriptors": descriptors,
         "smoothed_sensor_values": smoothed,
         "raw_sensor_frames": raw_frames,
@@ -2232,6 +2598,7 @@ def save_generation_artifacts(
     descriptors,
     prompt,
     prompt_sections,
+    generation_controls,
     seed: int,
     seed_test_mode: bool,
     output_dir: Path = OUTPUT_DIR,
@@ -2263,6 +2630,7 @@ def save_generation_artifacts(
         descriptors=descriptors,
         prompt=prompt,
         prompt_sections=prompt_sections,
+        generation_controls=generation_controls,
         seed=seed,
         seed_test_mode=seed_test_mode,
         timestamp=generation_time,
@@ -2287,6 +2655,9 @@ def save_generation_artifacts(
             "prompt_sections:",
             json_text(prompt_sections),
             "",
+            "generation_controls:",
+            json_text(generation_controls),
+            "",
             "final_prompt:",
             prompt,
             "",
@@ -2298,19 +2669,25 @@ def save_generation_artifacts(
     return image_path, log_path, metadata_path
 
 
-def generate_image(client, prompt: str, negative_prompt: str, seed: int):
-    # The locally installed InferenceClient exposes a `seed` keyword on text_to_image().
-    # If the HF API method changes in a different environment, this is the call site to update.
-    return client.text_to_image(
-        prompt,
-        negative_prompt=negative_prompt,
-        model=MODEL_ID,
-        width=IMAGE_WIDTH,
-        height=IMAGE_HEIGHT,
-        guidance_scale=IMAGE_GUIDANCE_SCALE,
-        num_inference_steps=IMAGE_NUM_INFERENCE_STEPS,
-        seed=seed,
-    )
+def generate_image(
+    client,
+    prompt: str,
+    negative_prompt: str,
+    seed: int,
+    generation_controls: dict[str, float | int],
+):
+    # Diffusion image generation is driven primarily by seed, prompt, guidance scale,
+    # and denoising steps. Temperature/top_p are not reliable structural controls here.
+    request_kwargs = {
+        "negative_prompt": negative_prompt,
+        "model": MODEL_ID,
+        "width": IMAGE_WIDTH,
+        "height": IMAGE_HEIGHT,
+        "guidance_scale": generation_controls["guidance_scale"],
+        "num_inference_steps": generation_controls["num_inference_steps"],
+        "seed": seed,
+    }
+    return client.text_to_image(prompt, **request_kwargs)
 
 
 def build_seed_test_folder(timestamp: datetime | None = None) -> Path:
@@ -2542,6 +2919,9 @@ def generate_and_save_image(
     prompt_sections = shared_state.get("prompt_sections") or build_prompt_sections(
         shared_state["interpreted_state"]
     )
+    generation_controls = shared_state.get("generation_controls") or build_generation_controls_from_uncertainty(
+        derive_uncertainty_score_from_descriptors(shared_state["interpreted_state"])
+    )
     negative_prompt = prompt_sections.get("negative_prompt", OPTIONAL_TEXT_UI_EXCLUSION_NEGATIVE_PROMPT)
     smoothed = shared_state["smoothed_sensor_values"]
     descriptors = shared_state["interpreted_state"]
@@ -2549,9 +2929,10 @@ def generate_and_save_image(
     print(f"[INFER] {json.dumps(descriptors)}")
     print(f"[PROMPT] {prompt}")
     print(f"[NEGATIVE_PROMPT] {negative_prompt}")
+    print(f"[GENERATION_CONTROLS] {json.dumps(generation_controls)}")
     print(f"[SEED] {seed}")
 
-    image = generate_image(client, prompt, negative_prompt, seed)
+    image = generate_image(client, prompt, negative_prompt, seed, generation_controls)
     image_path, log_path, metadata_path = save_generation_artifacts(
         image=image,
         raw_frames=raw_frames,
@@ -2559,6 +2940,7 @@ def generate_and_save_image(
         descriptors=descriptors,
         prompt=prompt,
         prompt_sections=prompt_sections,
+        generation_controls=generation_controls,
         seed=seed,
         seed_test_mode=seed_test_mode,
         output_dir=output_dir,
@@ -2751,6 +3133,7 @@ def process_interpretation_cycle(
         live_lines=live_lines,
         prompt=prompt,
         prompt_sections=prompt_sections,
+        generation_controls=scene_plan.get("generation_controls"),
         interpretation_source=scene_plan.get("interpretation_source", "rule_based"),
         agent_preview=scene_plan.get("agent_preview"),
         agent_notes=scene_plan.get("agent_notes", []),
