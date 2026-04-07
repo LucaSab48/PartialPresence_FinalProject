@@ -46,11 +46,11 @@ SMOOTHING_WINDOW_SIZE = 6
 MIN_FRAMES_FOR_PROCESSING = 3
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
-IMAGE_WIDTH = 512
-IMAGE_HEIGHT = 512
-IMAGE_NUM_INFERENCE_STEPS = 24
-IMAGE_NUM_INFERENCE_STEPS_MIN = 20
-IMAGE_NUM_INFERENCE_STEPS_MAX = 32
+IMAGE_WIDTH = 768
+IMAGE_HEIGHT = 768
+IMAGE_NUM_INFERENCE_STEPS = 30
+IMAGE_NUM_INFERENCE_STEPS_MIN = 26
+IMAGE_NUM_INFERENCE_STEPS_MAX = 38
 IMAGE_TEMPERATURE_MIN = 0.2
 IMAGE_TEMPERATURE_MAX = 0.8
 IMAGE_TOP_P_MIN = 0.7
@@ -66,9 +66,11 @@ IMAGE_UNCERTAINTY_TOP_P_CURVE = 0.9
 IMAGE_UNCERTAINTY_GUIDANCE_CURVE = 1.15
 DEFAULT_EMPTY_IMAGE_SEED = 23
 DEFAULT_OCCUPIED_IMAGE_SEED = 23
+IMAGE_SEED_CYCLE_VALUES = [23, 28, 78, 83, 90, 248, 284]
+IMAGE_SEED_CYCLE_INTERVAL_SECONDS = 120.0
 SEED_TEST_MODE = False
 SANITY_SINGLE_IMAGE_MODE = False
-SEED_TEST_VALUES = [23, 42, 77, 101, 222, 333, 444, 777]
+SEED_TEST_VALUES = [23, 42, 77, 101, 248, 333, 444, 777]
 OPTIONAL_TEXT_UI_EXCLUSION_NEGATIVE_PROMPT = (
     "text, words, letters, typography, signage, caption, watermark, user interface, "
     "collage, diptych, triptych, split panels, storyboard, poster layout, document layout, "
@@ -127,6 +129,7 @@ class InterpretationCoordinator:
     image_generation_in_progress: bool = False
     image_generation_started_at: float = 0.0
     pending_image_result: dict[str, Any] | None = None
+    seed_cycle_started_at: float | None = None
 
 
 def clamp(value: float, minimum: float, maximum: float) -> float:
@@ -1381,6 +1384,7 @@ def build_people_directive(descriptors):
     layout_mode = descriptors.get("layout_mode", "empty")
     primary_zone = descriptors.get("primary_zone", "center")
     depth_band = descriptors.get("depth_band", "mid-room")
+    placement_prompt = str(descriptors.get("placement_prompt") or "").strip()
 
     if figure_count == 0 or presence == "no presence" or presence_count == "no people":
         return (
@@ -1405,12 +1409,17 @@ def build_people_directive(descriptors):
         if figure_count == 2
         else "require one visible human figure as the occupancy revision"
     )
+    exact_count_text = (
+        "show exactly two adult human figures and no additional people anywhere in the frame"
+        if figure_count == 2
+        else "show exactly one adult human figure and no additional people anywhere in the frame"
+    )
     spacing_text = (
-        "allow the figures to separate across the room"
+        "keep the two bodies clearly separated with readable negative space between them"
         if layout_mode in ("split", "depth_split")
-        else "allow tighter grouping between the figures"
+        else "keep the two bodies close but still clearly distinct from each other"
         if layout_mode == "clustered"
-        else "allow some silhouette ambiguity without removing the body presence"
+        else "keep the single body stable and clearly readable"
     )
     audio_text = {
         "strong shared room noise": "treat the audio as strong evidence of multiple occupants or sustained shared activity, but do not force extra bodies without support from the other sensors",
@@ -1420,11 +1429,14 @@ def build_people_directive(descriptors):
         "audio unavailable": "do not infer extra occupants from missing audio",
     }.get(str(descriptors.get("audio_activity")), "keep the mood restrained and observational")
     return (
-        f"human presence is being inferred as {presence}, {count_text}, {zone_text}, {depth_text}, "
+        f"human presence is being inferred as {presence}, {count_text}, {exact_count_text}, {zone_text}, {depth_text}, "
+        f"{placement_prompt}, "
         "the room must read as visibly occupied, the figures must be noticeable at first glance, "
-        "render adult human bodies clearly enough to read immediately, not just traces, shadows, or implied presence, "
+        "render complete adult human bodies with stable anatomy and normal proportions, "
+        "show full standing figures instead of fragments, floating parts, shadows, or implied presence, "
         "keep the figures legible in the frame with enough scale to stand out from the background, "
-        f"{spacing_text}, {audio_text}, vary the figures more than the room itself"
+        "avoid crowds, duplicated bodies, merged silhouettes, extra limbs, and distorted anatomy, "
+        f"{spacing_text}, {audio_text}, keep the room secondary to the clearly readable human figures"
     )
 
 
@@ -1454,7 +1466,9 @@ def build_prompt_sections(descriptors):
             f"{OPTIONAL_TEXT_UI_EXCLUSION_NEGATIVE_PROMPT}, "
             "empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, "
             "tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, "
-            "changed architecture, changed camera angle, new furniture"
+            "changed architecture, changed camera angle, new furniture, crowd, group, extra person, extra people, "
+            "duplicate body, duplicated person, merged bodies, fused silhouettes, extra limbs, extra arms, extra legs, "
+            "disconnected limbs, cropped body, cut off body, floating torso, malformed anatomy"
         )
 
     return {
@@ -1467,8 +1481,78 @@ def build_prompt_sections(descriptors):
     }
 
 
-def select_generation_seed(descriptors: dict[str, Any]) -> int:
-    if descriptors.get("figure_count", 0) > 0:
+def get_seed_cycle_values() -> list[int]:
+    valid_values = [int(value) for value in IMAGE_SEED_CYCLE_VALUES if isinstance(value, int)]
+    if valid_values:
+        return valid_values
+    return [DEFAULT_OCCUPIED_IMAGE_SEED, DEFAULT_EMPTY_IMAGE_SEED]
+
+
+def resolve_seed_cycle_started_at(
+    coordinator: InterpretationCoordinator,
+    previous_shared_state: dict[str, Any],
+    now: float,
+) -> float:
+    if coordinator.seed_cycle_started_at is not None:
+        return coordinator.seed_cycle_started_at
+
+    candidate = previous_shared_state.get("seed_cycle_started_at")
+    if isinstance(candidate, (int, float)) and candidate > 0:
+        coordinator.seed_cycle_started_at = float(candidate)
+    else:
+        coordinator.seed_cycle_started_at = now
+    return coordinator.seed_cycle_started_at
+
+
+def build_seed_cycle_state(
+    coordinator: InterpretationCoordinator,
+    previous_shared_state: dict[str, Any],
+    now: float,
+) -> dict[str, Any]:
+    seeds = get_seed_cycle_values()
+    interval_seconds = max(1.0, float(IMAGE_SEED_CYCLE_INTERVAL_SECONDS))
+    started_at = resolve_seed_cycle_started_at(coordinator, previous_shared_state, now)
+    elapsed_seconds = max(0.0, now - started_at)
+    cycle_slot = int(elapsed_seconds // interval_seconds)
+    cycle_index = cycle_slot % len(seeds)
+    seconds_into_slot = elapsed_seconds % interval_seconds
+    seconds_until_next_seed = max(0.0, interval_seconds - seconds_into_slot)
+
+    return {
+        "started_at": round(started_at, 3),
+        "interval_seconds": interval_seconds,
+        "seeds": seeds,
+        "cycle_slot": cycle_slot,
+        "cycle_index": cycle_index,
+        "current_seed": seeds[cycle_index],
+        "seconds_until_next_seed": round(seconds_until_next_seed, 2),
+    }
+
+
+def has_active_seed_cycle(shared_state: dict[str, Any] | None) -> bool:
+    if not isinstance(shared_state, dict):
+        return False
+    seed_cycle = shared_state.get("seed_cycle")
+    if not isinstance(seed_cycle, dict):
+        return False
+    seeds = seed_cycle.get("seeds")
+    interval_seconds = seed_cycle.get("interval_seconds")
+    return (
+        isinstance(seeds, list)
+        and len(seeds) > 1
+        and isinstance(interval_seconds, (int, float))
+        and float(interval_seconds) > 0
+    )
+
+
+def select_generation_seed(shared_state: dict[str, Any]) -> int:
+    seed_cycle = shared_state.get("seed_cycle")
+    if isinstance(seed_cycle, dict):
+        current_seed = seed_cycle.get("current_seed")
+        if isinstance(current_seed, int):
+            return current_seed
+    descriptors = shared_state.get("interpreted_state") or {}
+    if isinstance(descriptors, dict) and descriptors.get("figure_count", 0) > 0:
         return DEFAULT_OCCUPIED_IMAGE_SEED
     return DEFAULT_EMPTY_IMAGE_SEED
 
@@ -1634,8 +1718,9 @@ def build_figure_variation_directive(descriptors: dict[str, Any]) -> str:
     if not modifier_text:
         modifier_text = "room retained, occupancy pattern revised"
     return (
-        "treat human figures as the primary changing element, allow variation in lateral placement, depth placement, spacing, "
-        f"scale, clustering, separation, pose, and clothing while keeping the room broadly stable, {modifier_text}"
+        "treat human figures as the primary changing element, keep the count and placement stable, "
+        "allow only subtle variation in pose and clothing, preserve full-body readability and clean silhouettes, "
+        f"keep the room broadly stable, {modifier_text}"
     )
 
 
@@ -2396,6 +2481,7 @@ def build_shared_state_payload(
     generated_image_path,
 ) -> dict[str, Any]:
     previous_shared_state = coordinator.latest_shared_state or {}
+    seed_cycle = build_seed_cycle_state(coordinator, previous_shared_state, now)
     return {
         "updated_at": datetime.now().isoformat(timespec="seconds"),
         "timing": {
@@ -2403,6 +2489,7 @@ def build_shared_state_payload(
             "image_generation_interval_seconds": IMAGE_GENERATION_INTERVAL_SECONDS,
             "force_image_refresh_seconds": FORCE_IMAGE_REFRESH_SECONDS,
             "state_stable_hold_seconds": STATE_STABLE_HOLD_SECONDS,
+            "seed_cycle_interval_seconds": IMAGE_SEED_CYCLE_INTERVAL_SECONDS,
         },
         "raw_frame_summary": {
             "frame_count": len(raw_frames),
@@ -2417,6 +2504,8 @@ def build_shared_state_payload(
         "image_prompt": prompt,
         "prompt_sections": prompt_sections,
         "generation_controls": generation_controls,
+        "seed_cycle": seed_cycle,
+        "seed_cycle_started_at": seed_cycle["started_at"],
         "state_signature": coordinator.current_signature,
         "stable_signature": coordinator.stable_signature,
         "last_meaningful_change_time": coordinator.last_meaningful_change_time,
@@ -2424,7 +2513,7 @@ def build_shared_state_payload(
         "last_image_generation_time": coordinator.last_image_generation_time,
         "current_image_path": resolve_image_path_value(generated_image_path),
         "current_image_seed": previous_shared_state.get(
-            "current_image_seed", select_generation_seed(descriptors)
+            "current_image_seed", seed_cycle["current_seed"]
         ),
         "seed_test_mode": previous_shared_state.get("seed_test_mode", SEED_TEST_MODE),
         "last_image_error": previous_shared_state.get("last_image_error"),
@@ -2554,6 +2643,7 @@ def add_debug_overlay(
     seed: int,
     presence_count: str,
     sen0628_figure_side: str,
+    uncertainty_score: float | None = None,
 ) -> Image.Image:
     debug_image = image.convert("RGBA")
     draw = ImageDraw.Draw(debug_image, "RGBA")
@@ -2564,6 +2654,8 @@ def add_debug_overlay(
         f"presence_count: {presence_count}",
         f"sen0628_figure_side: {sen0628_figure_side}",
     ]
+    if isinstance(uncertainty_score, (int, float)):
+        lines.append(f"uncertainty_score: {float(uncertainty_score):.3f}")
     padding_x = 8
     padding_y = 6
     line_gap = 3
@@ -2621,6 +2713,11 @@ def save_generation_artifacts(
         seed=seed,
         presence_count=str(descriptors.get("presence_count", "unknown")),
         sen0628_figure_side=str(descriptors.get("sen0628_figure_side", "unknown")),
+        uncertainty_score=(
+            float(descriptors["uncertainty_score"])
+            if isinstance(descriptors.get("uncertainty_score"), (int, float))
+            else None
+        ),
     )
     debug_image.save(image_path)
 
@@ -2859,6 +2956,9 @@ def should_generate_new_image(coordinator, now):
     seconds_since_meaningful_change = now - coordinator.last_meaningful_change_time
     decision = False
     reason = "scheduled interval not reached"
+    active_seed = None
+    prerequisites_met = False
+    force_refresh_enabled = not has_active_seed_cycle(coordinator.latest_shared_state)
 
     if coordinator.latest_shared_state is None:
         reason = "no shared state yet"
@@ -2868,12 +2968,30 @@ def should_generate_new_image(coordinator, now):
         reason = "image interval not reached"
     elif seconds_since_meaningful_change < STATE_STABLE_HOLD_SECONDS:
         reason = "state stability hold not reached"
-    elif coordinator.stable_signature != coordinator.last_image_signature:
+    else:
+        prerequisites_met = True
+        seed_cycle = coordinator.latest_shared_state.get("seed_cycle")
+        if isinstance(seed_cycle, dict) and isinstance(seed_cycle.get("current_seed"), int):
+            active_seed = seed_cycle["current_seed"]
+
+    if prerequisites_met and active_seed is not None:
+        current_image_seed = coordinator.latest_shared_state.get("current_image_seed")
+        if current_image_seed != active_seed:
+            decision = True
+            reason = "seed cycle advanced"
+    if prerequisites_met and not decision and coordinator.stable_signature != coordinator.last_image_signature:
         decision = True
         reason = "state signature changed"
-    elif seconds_since_last_image_generation >= FORCE_IMAGE_REFRESH_SECONDS:
+    elif (
+        prerequisites_met
+        and force_refresh_enabled
+        and not decision
+        and seconds_since_last_image_generation >= FORCE_IMAGE_REFRESH_SECONDS
+    ):
         decision = True
         reason = "scheduled timed refresh"
+    elif prerequisites_met and not decision and not force_refresh_enabled:
+        reason = "waiting for state change or next seed in cycle"
 
     print(
         "[IMAGE_CHECK] "
@@ -2885,6 +3003,8 @@ def should_generate_new_image(coordinator, now):
         f"seconds_since_last_image_generation={seconds_since_last_image_generation:.3f} "
         f"last_meaningful_change_time={format_debug_timestamp(coordinator.last_meaningful_change_time)} "
         f"seconds_since_meaningful_change={seconds_since_meaningful_change:.3f} "
+        f"active_seed={active_seed} "
+        f"force_refresh_enabled={force_refresh_enabled} "
         f"stable_signature={coordinator.stable_signature!r} "
         f"last_image_signature={coordinator.last_image_signature!r} "
         f"image_generation_in_progress={coordinator.image_generation_in_progress}"
@@ -3015,7 +3135,7 @@ def start_image_generation(
     shared_state_snapshot = json.loads(json.dumps(shared_state))
     raw_frames_snapshot = json.loads(json.dumps(raw_frames))
     signature = coordinator.stable_signature
-    selected_seed = select_generation_seed(shared_state_snapshot["interpreted_state"])
+    selected_seed = select_generation_seed(shared_state_snapshot)
 
     coordinator.image_generation_in_progress = True
     coordinator.image_generation_started_at = now
@@ -3163,6 +3283,8 @@ def print_runtime_configuration(openai_settings: dict[str, Any] | None):
     print(f"Shared state file: {SHARED_STATE_PATH.resolve()}")
     print(f"Default empty-room seed: {DEFAULT_EMPTY_IMAGE_SEED}")
     print(f"Default occupied-room seed: {DEFAULT_OCCUPIED_IMAGE_SEED}")
+    print(f"Seed cycle values: {get_seed_cycle_values()}")
+    print(f"Seed cycle interval: {IMAGE_SEED_CYCLE_INTERVAL_SECONDS} seconds")
     print(f"Seed test mode: {SEED_TEST_MODE}")
     if openai_settings and openai_settings.get("enabled"):
         print(f"OpenAI sensor interpreter: enabled ({openai_settings.get('model')})")

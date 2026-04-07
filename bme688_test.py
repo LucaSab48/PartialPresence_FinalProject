@@ -8,7 +8,6 @@ I2C_FREQUENCY = 100_000
 BME68X_ADDRS = (0x76, 0x77)
 EXPECTED_CHIP_ID = 0x61
 SAMPLE_DELAY_S = 2
-TEMPERATURE_OFFSET_C = 2.0
 
 REG_CHIP_ID = 0xD0
 REG_CTRL_GAS_1 = 0x71
@@ -240,11 +239,11 @@ class BME688:
         pressure_pa = self._compensate_pressure(adc_pressure)
         humidity_milli_pct = self._compensate_humidity(adc_humidity)
         gas_ohms = self._compensate_gas(adc_gas, gas_range)
-        adjusted_temperature_c = (temperature_centi_c / 100.0) - TEMPERATURE_OFFSET_C
+        raw_temperature_c = temperature_centi_c / 100.0
 
         return {
-            "temperature_c": adjusted_temperature_c,
-            "raw_temperature_c": temperature_centi_c / 100.0,
+            "temperature_c": raw_temperature_c,
+            "raw_temperature_c": raw_temperature_c,
             "pressure_hpa": pressure_pa / 100.0,
             "humidity_pct": humidity_milli_pct / 1000.0,
             "gas_ohms": gas_ohms,
@@ -272,8 +271,8 @@ def main():
 
     print("PICO_READY")
     print(
-        "BME688_TEST:I2C_ID={},SDA=GP{},SCL=GP{},TEMP_OFFSET_C={:.2f}".format(
-            I2C_ID, SDA_PIN, SCL_PIN, TEMPERATURE_OFFSET_C
+        "BME688_TEST:I2C_ID={},SDA=GP{},SCL=GP{},TEMP_MODE=RAW".format(
+            I2C_ID, SDA_PIN, SCL_PIN
         )
     )
 

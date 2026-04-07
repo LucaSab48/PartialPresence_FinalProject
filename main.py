@@ -13,7 +13,6 @@ BME_SCL_PIN = 5
 BME_I2C_FREQ = 100_000
 BME_ADDRS = (0x76, 0x77)
 BME_EXPECTED_CHIP_ID = 0x61
-BME_TEMPERATURE_OFFSET_C = 2.0
 
 LD_UART_BAUDRATE = 256000
 LD_MAX_BUFFER_SIZE = 512
@@ -307,7 +306,7 @@ class BME688:
 
         raw_temperature_c = temperature_centi_c / 100.0
         return {
-            "temperature_c": safe_round(raw_temperature_c - BME_TEMPERATURE_OFFSET_C),
+            "temperature_c": safe_round(raw_temperature_c),
             "raw_temperature_c": safe_round(raw_temperature_c),
             "humidity_pct": safe_round(humidity_milli_pct / 1000.0),
             "pressure_hpa": safe_round(pressure_pa / 100.0),

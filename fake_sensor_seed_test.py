@@ -17,7 +17,7 @@ from hf_auth import load_hf_token
 from openai_auth import load_openai_settings
 
 
-DEFAULT_SEEDS = [23, 42, 77, 101, 222, 333, 444, 777]
+DEFAULT_SEEDS = [250, 251, 252, 284, 299, 300, 352, 391]
 
 FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
     "empty-room": {

@@ -1,0 +1,77 @@
+{
+  "created_at": "2026-04-06T19:19:04",
+  "seeds": [
+    6,
+    66,
+    78,
+    83,
+    99,
+    105,
+    248,
+    666
+  ],
+  "prompt": "human presence is being inferred as active presence, require two visible human figures as the occupancy revision, show exactly two adult human figures and no additional people anywhere in the frame, toward the front zone, held around middle depth, show exactly two human figures, one near front, one in back depth, the room must read as visibly occupied, the figures must be noticeable at first glance, render complete adult human bodies with stable anatomy and normal proportions, show full standing figures instead of fragments, floating parts, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, avoid crowds, duplicated bodies, merged silhouettes, extra limbs, and distorted anatomy, keep the two bodies clearly separated with readable negative space between them, do not infer extra occupants from missing audio, keep the room secondary to the clearly readable human figures, treat human figures as the primary changing element, keep the count and placement stable, allow only subtle variation in pose and clothing, preserve full-body readability and clean silhouettes, keep the room broadly stable, same room retained, background structure held, camera view kept similar, two separated figures, figure grouping shifted toward front, figures shifted toward middle depth, natural upright posture, mixed casual outfits with realistic fabric texture, clear separation between bodies, photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics, preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element, single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details, two separated figures, front-and-back spacing, slight depth offset, same room, stable camera",
+  "descriptor_snapshot": {
+    "presence_activity": "active presence",
+    "presence_count": "two people",
+    "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, in the mid-room",
+    "sen0628_figure_side": "middle",
+    "presence_location": "split front and back",
+    "lighting_condition": "lighting unavailable",
+    "atmospheric_condition": "warm dense air",
+    "spatial_impression": "deep and layered",
+    "abstract_background": "abstract interior backdrop interpreted from sensor data, minimal ambiguous tonal fields with open depth, warm suspended haze with softened edges and very little detail, desaturated tones, muted color, large open areas",
+    "audio_activity": "audio unavailable",
+    "audio_device": null,
+    "audio_relative_db": null,
+    "front_presence": "active presence",
+    "back_presence": "active presence",
+    "front_strength": 109.0,
+    "back_strength": 97.0,
+    "active_ld_zones": [
+      "front",
+      "back"
+    ],
+    "dominant_ld_zone": "front",
+    "figure_count": 2,
+    "placement_summary": "two figures retained; one forward, one deeper",
+    "placement_prompt": "show exactly two human figures, one near front, one in back depth",
+    "depth_band": "mid-room",
+    "primary_zone": "front",
+    "secondary_zone": "back",
+    "active_zones": [
+      "front",
+      "back"
+    ],
+    "layout_mode": "depth_split",
+    "spatial_certainty": "high for two-presence; reduced for exact split d",
+    "uncertainty_score": 0.28,
+    "sensor_variation_profile": {
+      "fingerprint": "{\"audio_activity\": \"audio unavailable\", \"audio_bucket\": null, \"center_zone_bucket\": 10, \"depth_band\": \"back\", \"distance_bucket\": 10, \"far_points_bucket\": 4, \"figure_count\": 2, \"humidity_bucket\": 23, \"layout_mode\": \"depth_split\", \"left_zone_bucket\": 11, \"mid_points_bucket\": 19, \"moving_bucket\": 7, \"near_points_bucket\": 12, \"presence_activity\": \"active presence\", \"primary_zone\": \"front\", \"right_zone_bucket\": 11, \"stationary_bucket\": 4, \"temperature_bucket\": 41}",
+      "variation_index": 1,
+      "prompt_modifiers": [
+        "natural upright posture",
+        "mixed casual outfits with realistic fabric texture",
+        "clear separation between bodies"
+      ]
+    },
+    "figure_variation_modifiers": [
+      "same room retained",
+      "background structure held",
+      "camera view kept similar",
+      "two separated figures",
+      "figure grouping shifted toward front",
+      "figures shifted toward middle depth"
+    ]
+  },
+  "generated_filenames": [
+    "2026-04-06_19-17-36_seed-6_presence-two-people_middle.png",
+    "2026-04-06_19-17-50_seed-66_presence-two-people_middle.png",
+    "2026-04-06_19-18-04_seed-78_presence-two-people_middle.png",
+    "2026-04-06_19-18-18_seed-83_presence-two-people_middle.png",
+    "2026-04-06_19-18-43_seed-99_presence-two-people_middle.png",
+    "2026-04-06_19-18-50_seed-105_presence-two-people_middle.png",
+    "2026-04-06_19-18-57_seed-248_presence-two-people_middle.png",
+    "2026-04-06_19-19-04_seed-666_presence-two-people_middle.png"
+  ]
+}

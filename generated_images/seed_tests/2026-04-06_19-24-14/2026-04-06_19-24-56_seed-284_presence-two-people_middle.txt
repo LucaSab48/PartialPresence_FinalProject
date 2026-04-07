@@ -1,0 +1,506 @@
+generation_timestamp: 2026-04-06T19:24:56
+seed: 284
+seed_test_mode: True
+
+raw_sensor_frames:
+[
+  {
+    "type": "sensor_frame",
+    "seq": 0,
+    "uptime_ms": 0,
+    "bme688": {
+      "temperature_c": 24.55,
+      "raw_temperature_c": 25.15,
+      "humidity_pct": 56.5,
+      "pressure_hpa": 1011.2,
+      "gas_ohms": 13900.0
+    },
+    "ld2410c_front": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 151,
+      "moving_energy": 74,
+      "stationary_distance_cm": 167,
+      "stationary_energy": 39,
+      "detection_distance_cm": 159,
+      "status": "OK"
+    },
+    "ld2410c_back": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 214,
+      "moving_energy": 62,
+      "stationary_distance_cm": 232,
+      "stationary_energy": 31,
+      "detection_distance_cm": 224,
+      "status": "OK"
+    },
+    "sen0628": {
+      "center_mm": 1558,
+      "min_mm": 890,
+      "max_mm": 2290,
+      "mean_mm": 1668,
+      "valid_points": 35,
+      "left_zone_mm": 1489,
+      "center_zone_mm": 1419,
+      "right_zone_mm": 1539,
+      "left_close_points": 4,
+      "center_close_points": 6,
+      "right_close_points": 4,
+      "near_points": 12,
+      "mid_points": 19,
+      "far_points": 4
+    }
+  },
+  {
+    "type": "sensor_frame",
+    "seq": 1,
+    "uptime_ms": 250,
+    "bme688": {
+      "temperature_c": 24.65,
+      "raw_temperature_c": 25.25,
+      "humidity_pct": 57.0,
+      "pressure_hpa": 1011.2,
+      "gas_ohms": 13900.0
+    },
+    "ld2410c_front": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 152,
+      "moving_energy": 74,
+      "stationary_distance_cm": 168,
+      "stationary_energy": 39,
+      "detection_distance_cm": 160,
+      "status": "OK"
+    },
+    "ld2410c_back": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 214,
+      "moving_energy": 62,
+      "stationary_distance_cm": 232,
+      "stationary_energy": 31,
+      "detection_distance_cm": 224,
+      "status": "OK"
+    },
+    "sen0628": {
+      "center_mm": 1559,
+      "min_mm": 890,
+      "max_mm": 2290,
+      "mean_mm": 1669,
+      "valid_points": 35,
+      "left_zone_mm": 1490,
+      "center_zone_mm": 1420,
+      "right_zone_mm": 1540,
+      "left_close_points": 4,
+      "center_close_points": 6,
+      "right_close_points": 4,
+      "near_points": 12,
+      "mid_points": 19,
+      "far_points": 4
+    }
+  },
+  {
+    "type": "sensor_frame",
+    "seq": 2,
+    "uptime_ms": 500,
+    "bme688": {
+      "temperature_c": 24.55,
+      "raw_temperature_c": 25.15,
+      "humidity_pct": 57.5,
+      "pressure_hpa": 1011.2,
+      "gas_ohms": 13900.0
+    },
+    "ld2410c_front": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 153,
+      "moving_energy": 74,
+      "stationary_distance_cm": 169,
+      "stationary_energy": 39,
+      "detection_distance_cm": 161,
+      "status": "OK"
+    },
+    "ld2410c_back": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 214,
+      "moving_energy": 62,
+      "stationary_distance_cm": 232,
+      "stationary_energy": 31,
+      "detection_distance_cm": 224,
+      "status": "OK"
+    },
+    "sen0628": {
+      "center_mm": 1560,
+      "min_mm": 890,
+      "max_mm": 2290,
+      "mean_mm": 1670,
+      "valid_points": 35,
+      "left_zone_mm": 1491,
+      "center_zone_mm": 1421,
+      "right_zone_mm": 1541,
+      "left_close_points": 4,
+      "center_close_points": 6,
+      "right_close_points": 4,
+      "near_points": 12,
+      "mid_points": 19,
+      "far_points": 4
+    }
+  },
+  {
+    "type": "sensor_frame",
+    "seq": 3,
+    "uptime_ms": 750,
+    "bme688": {
+      "temperature_c": 24.65,
+      "raw_temperature_c": 25.25,
+      "humidity_pct": 56.5,
+      "pressure_hpa": 1011.2,
+      "gas_ohms": 13900.0
+    },
+    "ld2410c_front": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 151,
+      "moving_energy": 74,
+      "stationary_distance_cm": 167,
+      "stationary_energy": 39,
+      "detection_distance_cm": 159,
+      "status": "OK"
+    },
+    "ld2410c_back": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 214,
+      "moving_energy": 62,
+      "stationary_distance_cm": 232,
+      "stationary_energy": 31,
+      "detection_distance_cm": 224,
+      "status": "OK"
+    },
+    "sen0628": {
+      "center_mm": 1561,
+      "min_mm": 890,
+      "max_mm": 2290,
+      "mean_mm": 1671,
+      "valid_points": 35,
+      "left_zone_mm": 1489,
+      "center_zone_mm": 1419,
+      "right_zone_mm": 1539,
+      "left_close_points": 4,
+      "center_close_points": 6,
+      "right_close_points": 4,
+      "near_points": 12,
+      "mid_points": 19,
+      "far_points": 4
+    }
+  },
+  {
+    "type": "sensor_frame",
+    "seq": 4,
+    "uptime_ms": 1000,
+    "bme688": {
+      "temperature_c": 24.55,
+      "raw_temperature_c": 25.15,
+      "humidity_pct": 57.0,
+      "pressure_hpa": 1011.2,
+      "gas_ohms": 13900.0
+    },
+    "ld2410c_front": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 152,
+      "moving_energy": 74,
+      "stationary_distance_cm": 168,
+      "stationary_energy": 39,
+      "detection_distance_cm": 160,
+      "status": "OK"
+    },
+    "ld2410c_back": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 214,
+      "moving_energy": 62,
+      "stationary_distance_cm": 232,
+      "stationary_energy": 31,
+      "detection_distance_cm": 224,
+      "status": "OK"
+    },
+    "sen0628": {
+      "center_mm": 1562,
+      "min_mm": 890,
+      "max_mm": 2290,
+      "mean_mm": 1672,
+      "valid_points": 35,
+      "left_zone_mm": 1490,
+      "center_zone_mm": 1420,
+      "right_zone_mm": 1540,
+      "left_close_points": 4,
+      "center_close_points": 6,
+      "right_close_points": 4,
+      "near_points": 12,
+      "mid_points": 19,
+      "far_points": 4
+    }
+  },
+  {
+    "type": "sensor_frame",
+    "seq": 5,
+    "uptime_ms": 1250,
+    "bme688": {
+      "temperature_c": 24.65,
+      "raw_temperature_c": 25.25,
+      "humidity_pct": 57.5,
+      "pressure_hpa": 1011.2,
+      "gas_ohms": 13900.0
+    },
+    "ld2410c_front": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 153,
+      "moving_energy": 74,
+      "stationary_distance_cm": 169,
+      "stationary_energy": 39,
+      "detection_distance_cm": 161,
+      "status": "OK"
+    },
+    "ld2410c_back": {
+      "out": 1,
+      "target_state": "MOVING_AND_STATIONARY",
+      "target_state_raw": 3,
+      "moving_distance_cm": 214,
+      "moving_energy": 62,
+      "stationary_distance_cm": 232,
+      "stationary_energy": 31,
+      "detection_distance_cm": 224,
+      "status": "OK"
+    },
+    "sen0628": {
+      "center_mm": 1558,
+      "min_mm": 890,
+      "max_mm": 2290,
+      "mean_mm": 1668,
+      "valid_points": 35,
+      "left_zone_mm": 1491,
+      "center_zone_mm": 1421,
+      "right_zone_mm": 1541,
+      "left_close_points": 4,
+      "center_close_points": 6,
+      "right_close_points": 4,
+      "near_points": 12,
+      "mid_points": 19,
+      "far_points": 4
+    }
+  }
+]
+
+smoothed_sensor_values:
+{
+  "frame_count": 6,
+  "seq_range": [
+    0,
+    5
+  ],
+  "uptime_ms": 1250,
+  "bme688": {
+    "temperature_c": 24.599999999999998,
+    "raw_temperature_c": 25.2,
+    "humidity_pct": 57.0,
+    "pressure_hpa": 1011.2000000000002,
+    "gas_ohms": 13900.0
+  },
+  "ld2410c_front": {
+    "out": 1,
+    "target_state": "MOVING_AND_STATIONARY",
+    "target_state_raw": 3,
+    "moving_distance_cm": 152.0,
+    "moving_energy": 74.0,
+    "stationary_distance_cm": 168.0,
+    "stationary_energy": 39.0,
+    "detection_distance_cm": 160.0,
+    "status": "OK",
+    "state_history": [
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY"
+    ]
+  },
+  "ld2410c_back": {
+    "out": 1,
+    "target_state": "MOVING_AND_STATIONARY",
+    "target_state_raw": 3,
+    "moving_distance_cm": 214.0,
+    "moving_energy": 62.0,
+    "stationary_distance_cm": 232.0,
+    "stationary_energy": 31.0,
+    "detection_distance_cm": 224.0,
+    "status": "OK",
+    "state_history": [
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY"
+    ]
+  },
+  "ld2410c": {
+    "out": 1,
+    "target_state": "MOVING_AND_STATIONARY",
+    "target_state_raw": 3,
+    "moving_distance_cm": 183.0,
+    "moving_energy": 74.0,
+    "stationary_distance_cm": 200.0,
+    "stationary_energy": 39.0,
+    "detection_distance_cm": 192.0,
+    "status": "OK",
+    "state_history": [
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY",
+      "MOVING_AND_STATIONARY"
+    ]
+  },
+  "sen0628": {
+    "mount_mode": null,
+    "ceiling_height_mm": null,
+    "center_mm": 1559.6666666666667,
+    "min_mm": 890.0,
+    "max_mm": 2290.0,
+    "mean_mm": 1669.6666666666667,
+    "valid_points": 35.0,
+    "left_zone_mm": 1490.0,
+    "center_zone_mm": 1420.0,
+    "right_zone_mm": 1540.0,
+    "left_close_points": 4.0,
+    "center_close_points": 6.0,
+    "right_close_points": 4.0,
+    "left_occupied_points": null,
+    "center_occupied_points": null,
+    "right_occupied_points": null,
+    "front_zone_mm": null,
+    "mid_zone_mm": null,
+    "back_zone_mm": null,
+    "front_occupied_points": null,
+    "mid_occupied_points": null,
+    "back_occupied_points": null,
+    "near_points": 12.0,
+    "mid_points": 19.0,
+    "far_points": 4.0,
+    "floor_occupied_points": null,
+    "floor_clear_points": null,
+    "mean_obstruction_height_mm": null,
+    "max_obstruction_height_mm": null,
+    "low_obstruction_points": null,
+    "mid_obstruction_points": null,
+    "tall_obstruction_points": null
+  },
+  "usb_microphone": null,
+  "errors": {
+    "bme688_error": null,
+    "sen0628_error": null
+  }
+}
+
+interpreted_descriptors:
+{
+  "presence_activity": "active presence",
+  "presence_count": "two people",
+  "sen0628_spatial_estimate": "SEN0628 suggests occupancy spread across the room, in the mid-room",
+  "sen0628_figure_side": "middle",
+  "presence_location": "split between front and back zones",
+  "lighting_condition": "lighting unavailable",
+  "atmospheric_condition": "warm dense air",
+  "spatial_impression": "deep and layered",
+  "abstract_background": "abstract interior backdrop interpreted from sensor data, minimal ambiguous tonal fields with open depth, warm suspended haze with softened edges and very little detail, desaturated tones, muted color, large open areas",
+  "audio_activity": "audio unavailable",
+  "audio_device": null,
+  "audio_relative_db": null,
+  "front_presence": "active presence",
+  "back_presence": "active presence",
+  "front_strength": 109.0,
+  "back_strength": 97.0,
+  "active_ld_zones": [
+    "front",
+    "back"
+  ],
+  "dominant_ld_zone": "front",
+  "figure_count": 2,
+  "placement_summary": "two figures retained; one nearer front, one deeper back",
+  "placement_prompt": "exactly two human figures, one front-biased, one back-biased",
+  "depth_band": "mid-room",
+  "primary_zone": "front",
+  "secondary_zone": "back",
+  "active_zones": [
+    "front",
+    "back"
+  ],
+  "layout_mode": "depth_split",
+  "spatial_certainty": "moderate",
+  "uncertainty_score": 0.28,
+  "sensor_variation_profile": {
+    "fingerprint": "{\"audio_activity\": \"audio unavailable\", \"audio_bucket\": null, \"center_zone_bucket\": 10, \"depth_band\": \"back\", \"distance_bucket\": 10, \"far_points_bucket\": 4, \"figure_count\": 2, \"humidity_bucket\": 23, \"layout_mode\": \"depth_split\", \"left_zone_bucket\": 11, \"mid_points_bucket\": 19, \"moving_bucket\": 7, \"near_points_bucket\": 12, \"presence_activity\": \"active presence\", \"primary_zone\": \"front\", \"right_zone_bucket\": 11, \"stationary_bucket\": 4, \"temperature_bucket\": 41}",
+    "variation_index": 1,
+    "prompt_modifiers": [
+      "natural upright posture",
+      "mixed casual outfits with realistic fabric texture",
+      "clear separation between bodies"
+    ]
+  },
+  "figure_variation_modifiers": [
+    "same room retained",
+    "background structure held",
+    "camera view kept similar",
+    "two separated figures",
+    "figure grouping shifted toward front",
+    "figures shifted toward middle depth"
+  ]
+}
+
+prompt_sections:
+{
+  "base_scene_prompt": "photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics",
+  "background_continuity_directive": "preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element",
+  "people_directive": "human presence is being inferred as active presence, require two visible human figures as the occupancy revision, show exactly two adult human figures and no additional people anywhere in the frame, toward the front zone, held around middle depth, exactly two human figures, one front-biased, one back-biased, the room must read as visibly occupied, the figures must be noticeable at first glance, render complete adult human bodies with stable anatomy and normal proportions, show full standing figures instead of fragments, floating parts, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, avoid crowds, duplicated bodies, merged silhouettes, extra limbs, and distorted anatomy, keep the two bodies clearly separated with readable negative space between them, do not infer extra occupants from missing audio, keep the room secondary to the clearly readable human figures",
+  "figure_variation_directive": "treat human figures as the primary changing element, keep the count and placement stable, allow only subtle variation in pose and clothing, preserve full-body readability and clean silhouettes, keep the room broadly stable, same room retained, background structure held, camera view kept similar, two separated figures, figure grouping shifted toward front, figures shifted toward middle depth, natural upright posture, mixed casual outfits with realistic fabric texture, clear separation between bodies",
+  "composition_directive": "single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details",
+  "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, changed architecture, changed camera angle, new furniture, crowd, group, extra person, extra people, duplicate body, duplicated person, merged bodies, fused silhouettes, extra limbs, extra arms, extra legs, disconnected limbs, cropped body, cut off body, floating torso, malformed anatomy"
+}
+
+generation_controls:
+{
+  "uncertainty_score": 0.22,
+  "temperature": 0.42,
+  "top_p": 0.86,
+  "guidance_scale": 7.0,
+  "num_inference_steps": 30
+}
+
+final_prompt:
+human presence is being inferred as active presence, require two visible human figures as the occupancy revision, show exactly two adult human figures and no additional people anywhere in the frame, toward the front zone, held around middle depth, exactly two human figures, one front-biased, one back-biased, the room must read as visibly occupied, the figures must be noticeable at first glance, render complete adult human bodies with stable anatomy and normal proportions, show full standing figures instead of fragments, floating parts, shadows, or implied presence, keep the figures legible in the frame with enough scale to stand out from the background, avoid crowds, duplicated bodies, merged silhouettes, extra limbs, and distorted anatomy, keep the two bodies clearly separated with readable negative space between them, do not infer extra occupants from missing audio, keep the room secondary to the clearly readable human figures, treat human figures as the primary changing element, keep the count and placement stable, allow only subtle variation in pose and clothing, preserve full-body readability and clean silhouettes, keep the room broadly stable, same room retained, background structure held, camera view kept similar, two separated figures, figure grouping shifted toward front, figures shifted toward middle depth, natural upright posture, mixed casual outfits with realistic fabric texture, clear separation between bodies, photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics, preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element, single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, do not render an empty room when presence is inferred, keep background secondary to visible human presence, preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details, two separated figures, front and back spacing, slight depth split, room unchanged
+
+negative_prompt:
+text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, changed architecture, changed camera angle, new furniture, crowd, group, extra person, extra people, duplicate body, duplicated person, merged bodies, fused silhouettes, extra limbs, extra arms, extra legs, disconnected limbs, cropped body, cut off body, floating torso, malformed anatomy
