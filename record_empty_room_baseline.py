@@ -61,6 +61,15 @@ def main() -> None:
     print(f"Waiting up to {SERIAL_STARTUP_SECONDS} seconds for sensor frames...")
     print(f"USB microphone: {microphone_monitor.status_text}")
 
+    def log_frame_warnings(frame: dict[str, Any]) -> None:
+        bme_error = frame.get("bme688_error")
+        sen_error = frame.get("sen0628_error")
+        seq = frame.get("seq")
+        if bme_error not in (None, ""):
+            print(f"[BASELINE_WARN] seq={seq} BME688 error: {bme_error}")
+        if sen_error not in (None, ""):
+            print(f"[BASELINE_WARN] seq={seq} SEN0628 error: {sen_error}")
+
     try:
         with serial.Serial(args.port, BAUDRATE, timeout=SERIAL_TIMEOUT_SECONDS) as ser:
             startup_deadline = time.time() + SERIAL_STARTUP_SECONDS
@@ -70,6 +79,7 @@ def main() -> None:
                     continue
                 frame = parse_sensor_line(raw_line)
                 if frame is not None:
+                    log_frame_warnings(frame)
                     frame_buffer.append(attach_microphone_snapshot(frame, microphone_monitor))
 
             if len(frame_buffer) < MIN_FRAMES_FOR_PROCESSING:
@@ -83,6 +93,7 @@ def main() -> None:
                     continue
                 frame = parse_sensor_line(raw_line)
                 if frame is not None:
+                    log_frame_warnings(frame)
                     augmented_frame = attach_microphone_snapshot(frame, microphone_monitor)
                     frame_buffer.append(augmented_frame)
                     print(f"[BASELINE_FRAME] seq={frame.get('seq')} uptime_ms={frame.get('uptime_ms')}")

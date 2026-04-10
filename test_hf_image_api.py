@@ -14,7 +14,7 @@ def parse_args():
     )
     parser.add_argument(
         "--model",
-        default="stabilityai/stable-diffusion-xl-base-1.0",
+        default="stabilityai/stable-diffusion-3-medium-diffusers",
         help="Hugging Face model id to test",
     )
     parser.add_argument(

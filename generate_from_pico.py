@@ -45,12 +45,12 @@ AUDIO_ACTIVITY_CHANGE_THRESHOLD = 1.5
 SMOOTHING_WINDOW_SIZE = 6
 MIN_FRAMES_FOR_PROCESSING = 3
 
-MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+MODEL_ID = "stabilityai/stable-diffusion-3-medium-diffusers"
 IMAGE_WIDTH = 768
 IMAGE_HEIGHT = 768
-IMAGE_NUM_INFERENCE_STEPS = 30
-IMAGE_NUM_INFERENCE_STEPS_MIN = 26
-IMAGE_NUM_INFERENCE_STEPS_MAX = 38
+IMAGE_NUM_INFERENCE_STEPS = 28
+IMAGE_NUM_INFERENCE_STEPS_MIN = 24
+IMAGE_NUM_INFERENCE_STEPS_MAX = 32
 IMAGE_TEMPERATURE_MIN = 0.2
 IMAGE_TEMPERATURE_MAX = 0.8
 IMAGE_TOP_P_MIN = 0.7
@@ -66,8 +66,8 @@ IMAGE_UNCERTAINTY_TOP_P_CURVE = 0.9
 IMAGE_UNCERTAINTY_GUIDANCE_CURVE = 1.15
 DEFAULT_EMPTY_IMAGE_SEED = 23
 DEFAULT_OCCUPIED_IMAGE_SEED = 23
-IMAGE_SEED_CYCLE_VALUES = [23, 28, 78, 83, 90, 248, 284]
-IMAGE_SEED_CYCLE_INTERVAL_SECONDS = 120.0
+IMAGE_SEED_CYCLE_VALUES = [252, 244, 264, 256]
+IMAGE_SEED_CYCLE_INTERVAL_SECONDS = 45.0
 SEED_TEST_MODE = False
 SANITY_SINGLE_IMAGE_MODE = False
 SEED_TEST_VALUES = [23, 42, 77, 101, 248, 333, 444, 777]
@@ -113,8 +113,57 @@ MAX_LANGUAGE_PASS_AGENT_NOTES = 1
 MIN_LANGUAGE_PASS_AGENT_NOTES = 0
 MAX_LANGUAGE_PASS_PROMPT_MODIFIERS = 6
 MIN_LANGUAGE_PASS_PROMPT_MODIFIERS = 3
+EMPTY_ROOM_BASELINE_METRIC_TOLERANCES = {
+    "ld2410c.out": 0.5,
+    "ld2410c.moving_energy": 18.0,
+    "ld2410c.stationary_energy": 28.0,
+    "ld2410c.detection_distance_cm": 85.0,
+    "ld2410c_front.out": 0.5,
+    "ld2410c_front.moving_energy": 18.0,
+    "ld2410c_front.stationary_energy": 28.0,
+    "ld2410c_front.detection_distance_cm": 85.0,
+    "ld2410c_back.out": 0.5,
+    "ld2410c_back.moving_energy": 18.0,
+    "ld2410c_back.stationary_energy": 28.0,
+    "ld2410c_back.detection_distance_cm": 85.0,
+    "sen0628.valid_points": 8.0,
+    "sen0628.left_zone_mm": 180.0,
+    "sen0628.center_zone_mm": 180.0,
+    "sen0628.right_zone_mm": 180.0,
+    "sen0628.front_zone_mm": 180.0,
+    "sen0628.mid_zone_mm": 180.0,
+    "sen0628.back_zone_mm": 180.0,
+    "sen0628.left_close_points": 1.5,
+    "sen0628.center_close_points": 1.5,
+    "sen0628.right_close_points": 1.5,
+    "sen0628.left_occupied_points": 1.0,
+    "sen0628.center_occupied_points": 1.0,
+    "sen0628.right_occupied_points": 1.0,
+    "sen0628.front_occupied_points": 1.0,
+    "sen0628.mid_occupied_points": 1.0,
+    "sen0628.back_occupied_points": 1.0,
+    "sen0628.near_points": 1.0,
+    "sen0628.mid_points": 6.0,
+    "sen0628.far_points": 8.0,
+    "sen0628.floor_occupied_points": 1.0,
+    "sen0628.floor_clear_points": 8.0,
+    "sen0628.mean_obstruction_height_mm": 120.0,
+    "sen0628.max_obstruction_height_mm": 120.0,
+    "sen0628.low_obstruction_points": 1.0,
+    "sen0628.mid_obstruction_points": 1.0,
+    "sen0628.tall_obstruction_points": 1.0,
+    "usb_microphone.activity_score": 1.0,
+    "usb_microphone.relative_db": 6.0,
+    "usb_microphone.active_fraction": 0.2,
+}
 BASELINE_SUBSTANTIAL_DELTA = 3.0
 BASELINE_VERY_SUBSTANTIAL_DELTA = 12.0
+PRESENCE_COUNT_SCORE_THRESHOLDS = {
+    1: 0.95,
+    2: 2.15,
+    3: 4.15,
+    4: 4.95,
+}
 
 
 @dataclass
@@ -404,11 +453,86 @@ def numeric_mean(values):
     return sum(clean_values) / len(clean_values)
 
 
+def sen_distance_value(value):
+    if isinstance(value, (int, float)) and 0 < value < 4000:
+        return float(value)
+    return None
+
+
+def smooth_sen0628_frames(sen_frames):
+    if not sen_frames:
+        return None
+
+    def distance_mean(key):
+        return numeric_mean([sen_distance_value(item.get(key)) for item in sen_frames])
+
+    sen_summary = {
+        "mount_mode": pick_mode([item.get("mount_mode") for item in sen_frames]),
+        "ceiling_height_mm": numeric_mean([item.get("ceiling_height_mm") for item in sen_frames]),
+        "center_mm": distance_mean("center_mm"),
+        "center_raw_mm": numeric_mean([item.get("center_raw_mm") for item in sen_frames]),
+        "min_mm": distance_mean("min_mm"),
+        "max_mm": distance_mean("max_mm"),
+        "mean_mm": distance_mean("mean_mm"),
+        "valid_points": numeric_mean([item.get("valid_points") for item in sen_frames]),
+        "left_zone_mm": distance_mean("left_zone_mm"),
+        "center_zone_mm": distance_mean("center_zone_mm"),
+        "right_zone_mm": distance_mean("right_zone_mm"),
+        "left_close_points": numeric_mean([item.get("left_close_points") for item in sen_frames]),
+        "center_close_points": numeric_mean([item.get("center_close_points") for item in sen_frames]),
+        "right_close_points": numeric_mean([item.get("right_close_points") for item in sen_frames]),
+        "left_occupied_points": numeric_mean([item.get("left_occupied_points") for item in sen_frames]),
+        "center_occupied_points": numeric_mean([item.get("center_occupied_points") for item in sen_frames]),
+        "right_occupied_points": numeric_mean([item.get("right_occupied_points") for item in sen_frames]),
+        "front_zone_mm": distance_mean("front_zone_mm"),
+        "mid_zone_mm": distance_mean("mid_zone_mm"),
+        "back_zone_mm": distance_mean("back_zone_mm"),
+        "front_occupied_points": numeric_mean([item.get("front_occupied_points") for item in sen_frames]),
+        "mid_occupied_points": numeric_mean([item.get("mid_occupied_points") for item in sen_frames]),
+        "back_occupied_points": numeric_mean([item.get("back_occupied_points") for item in sen_frames]),
+        "near_points": numeric_mean([item.get("near_points") for item in sen_frames]),
+        "mid_points": numeric_mean([item.get("mid_points") for item in sen_frames]),
+        "far_points": numeric_mean([item.get("far_points") for item in sen_frames]),
+        "floor_occupied_points": numeric_mean([item.get("floor_occupied_points") for item in sen_frames]),
+        "floor_clear_points": numeric_mean([item.get("floor_clear_points") for item in sen_frames]),
+        "mean_obstruction_height_mm": numeric_mean([item.get("mean_obstruction_height_mm") for item in sen_frames]),
+        "max_obstruction_height_mm": numeric_mean([item.get("max_obstruction_height_mm") for item in sen_frames]),
+        "low_obstruction_points": numeric_mean([item.get("low_obstruction_points") for item in sen_frames]),
+        "mid_obstruction_points": numeric_mean([item.get("mid_obstruction_points") for item in sen_frames]),
+        "tall_obstruction_points": numeric_mean([item.get("tall_obstruction_points") for item in sen_frames]),
+    }
+
+    if (
+        sen_summary["center_mm"] is not None
+        and sen_summary["max_mm"] is not None
+        and sen_summary["center_mm"] > sen_summary["max_mm"]
+    ):
+        sen_summary["center_mm"] = None
+
+    return sen_summary
+
+
 def pick_mode(values):
     clean_values = [value for value in values if value not in (None, "")]
     if not clean_values:
         return None
     return Counter(clean_values).most_common(1)[0][0]
+
+
+def summarize_error_values(values):
+    clean_values = [str(value) for value in values if value not in (None, "")]
+    if not clean_values:
+        return {
+            "latest": None,
+            "count": 0,
+            "samples": [],
+        }
+    unique_samples = list(dict.fromkeys(clean_values))
+    return {
+        "latest": clean_values[-1],
+        "count": len(clean_values),
+        "samples": unique_samples,
+    }
 
 
 def parse_sensor_line(raw_line):
@@ -524,6 +648,8 @@ def smooth_frames(frames):
     front_summary = smooth_ld_sensor_frames(front_frames)
     back_summary = smooth_ld_sensor_frames(back_frames)
     combined_ld_summary = combine_ld_summaries(front_summary, back_summary)
+    bme_error_summary = summarize_error_values([frame.get("bme688_error") for frame in frames])
+    sen_error_summary = summarize_error_values([frame.get("sen0628_error") for frame in frames])
 
     smoothed = {
         "frame_count": len(frames),
@@ -541,42 +667,7 @@ def smooth_frames(frames):
         "ld2410c_front": front_summary,
         "ld2410c_back": back_summary,
         "ld2410c": combined_ld_summary,
-        "sen0628": {
-            "mount_mode": pick_mode([item.get("mount_mode") for item in sen_frames]),
-            "ceiling_height_mm": numeric_mean([item.get("ceiling_height_mm") for item in sen_frames]),
-            "center_mm": numeric_mean([item.get("center_mm") for item in sen_frames]),
-            "min_mm": numeric_mean([item.get("min_mm") for item in sen_frames]),
-            "max_mm": numeric_mean([item.get("max_mm") for item in sen_frames]),
-            "mean_mm": numeric_mean([item.get("mean_mm") for item in sen_frames]),
-            "valid_points": numeric_mean([item.get("valid_points") for item in sen_frames]),
-            "left_zone_mm": numeric_mean([item.get("left_zone_mm") for item in sen_frames]),
-            "center_zone_mm": numeric_mean([item.get("center_zone_mm") for item in sen_frames]),
-            "right_zone_mm": numeric_mean([item.get("right_zone_mm") for item in sen_frames]),
-            "left_close_points": numeric_mean([item.get("left_close_points") for item in sen_frames]),
-            "center_close_points": numeric_mean([item.get("center_close_points") for item in sen_frames]),
-            "right_close_points": numeric_mean([item.get("right_close_points") for item in sen_frames]),
-            "left_occupied_points": numeric_mean([item.get("left_occupied_points") for item in sen_frames]),
-            "center_occupied_points": numeric_mean([item.get("center_occupied_points") for item in sen_frames]),
-            "right_occupied_points": numeric_mean([item.get("right_occupied_points") for item in sen_frames]),
-            "front_zone_mm": numeric_mean([item.get("front_zone_mm") for item in sen_frames]),
-            "mid_zone_mm": numeric_mean([item.get("mid_zone_mm") for item in sen_frames]),
-            "back_zone_mm": numeric_mean([item.get("back_zone_mm") for item in sen_frames]),
-            "front_occupied_points": numeric_mean([item.get("front_occupied_points") for item in sen_frames]),
-            "mid_occupied_points": numeric_mean([item.get("mid_occupied_points") for item in sen_frames]),
-            "back_occupied_points": numeric_mean([item.get("back_occupied_points") for item in sen_frames]),
-            "near_points": numeric_mean([item.get("near_points") for item in sen_frames]),
-            "mid_points": numeric_mean([item.get("mid_points") for item in sen_frames]),
-            "far_points": numeric_mean([item.get("far_points") for item in sen_frames]),
-            "floor_occupied_points": numeric_mean([item.get("floor_occupied_points") for item in sen_frames]),
-            "floor_clear_points": numeric_mean([item.get("floor_clear_points") for item in sen_frames]),
-            "mean_obstruction_height_mm": numeric_mean([item.get("mean_obstruction_height_mm") for item in sen_frames]),
-            "max_obstruction_height_mm": numeric_mean([item.get("max_obstruction_height_mm") for item in sen_frames]),
-            "low_obstruction_points": numeric_mean([item.get("low_obstruction_points") for item in sen_frames]),
-            "mid_obstruction_points": numeric_mean([item.get("mid_obstruction_points") for item in sen_frames]),
-            "tall_obstruction_points": numeric_mean([item.get("tall_obstruction_points") for item in sen_frames]),
-        }
-        if sen_frames
-        else None,
+        "sen0628": smooth_sen0628_frames(sen_frames),
         "usb_microphone": {
             "available": pick_mode([item.get("available") for item in microphone_frames]),
             "device_name": pick_mode([item.get("device_name") for item in microphone_frames]),
@@ -598,8 +689,12 @@ def smooth_frames(frames):
         if microphone_frames
         else None,
         "errors": {
-            "bme688_error": pick_mode([frame.get("bme688_error") for frame in frames]),
-            "sen0628_error": pick_mode([frame.get("sen0628_error") for frame in frames]),
+            "bme688_error": bme_error_summary["latest"],
+            "bme688_error_count": bme_error_summary["count"],
+            "bme688_error_samples": bme_error_summary["samples"],
+            "sen0628_error": sen_error_summary["latest"],
+            "sen0628_error_count": sen_error_summary["count"],
+            "sen0628_error_samples": sen_error_summary["samples"],
         },
     }
     return smoothed
@@ -686,6 +781,13 @@ def flatten_numeric_values(data: Any, prefix: str = "") -> dict[str, float]:
     return flat
 
 
+def empty_room_baseline_tolerance_for_metric(metric_name: str) -> float | None:
+    tolerance = EMPTY_ROOM_BASELINE_METRIC_TOLERANCES.get(metric_name)
+    if isinstance(tolerance, (int, float)) and not isinstance(tolerance, bool):
+        return float(tolerance)
+    return None
+
+
 def build_empty_room_comparison(
     smoothed: dict[str, Any],
     empty_room_baseline: dict[str, Any] | None,
@@ -696,13 +798,18 @@ def build_empty_room_comparison(
     live_values = flatten_numeric_values(smoothed)
     baseline_values = flatten_numeric_values(empty_room_baseline)
     changed_metrics: list[dict[str, Any]] = []
+    compared_metric_count = 0
 
     for key in sorted(set(live_values.keys()) & set(baseline_values.keys())):
+        tolerance = empty_room_baseline_tolerance_for_metric(key)
+        if tolerance is None:
+            continue
+        compared_metric_count += 1
         baseline_value = baseline_values[key]
         live_value = live_values[key]
         delta = live_value - baseline_value
         magnitude = abs(delta)
-        if magnitude < 0.75:
+        if magnitude < tolerance:
             continue
         changed_metrics.append(
             {
@@ -710,6 +817,7 @@ def build_empty_room_comparison(
                 "baseline": round(baseline_value, 3),
                 "live": round(live_value, 3),
                 "delta": round(delta, 3),
+                "tolerance": round(tolerance, 3),
             }
         )
 
@@ -717,6 +825,8 @@ def build_empty_room_comparison(
     return {
         "available": True,
         "top_changed_metrics": changed_metrics[:12],
+        "compared_metric_count": compared_metric_count,
+        "changed_metric_count": len(changed_metrics),
         "baseline_seq_range": empty_room_baseline.get("seq_range"),
         "baseline_frame_count": empty_room_baseline.get("frame_count"),
     }
@@ -727,6 +837,16 @@ def classify_baseline_departure(empty_room_comparison: dict[str, Any] | None) ->
         return "unknown"
 
     changed_metrics = empty_room_comparison.get("top_changed_metrics")
+    compared_metric_count = empty_room_comparison.get("compared_metric_count")
+    changed_metric_count = empty_room_comparison.get("changed_metric_count")
+    if isinstance(compared_metric_count, int) and compared_metric_count > 0:
+        if not isinstance(changed_metric_count, int):
+            changed_metric_count = len(changed_metrics) if isinstance(changed_metrics, list) else 0
+        change_ratio = float(changed_metric_count) / float(compared_metric_count)
+        if changed_metric_count == 0 or change_ratio <= 0.08:
+            return "minimal"
+        if change_ratio <= 0.22:
+            return "weak"
     if not isinstance(changed_metrics, list):
         return "minimal"
     if not changed_metrics:
@@ -750,6 +870,174 @@ def classify_baseline_departure(empty_room_comparison: dict[str, Any] | None) ->
     if departure_score <= 4:
         return "moderate"
     return "strong"
+
+
+def baseline_matches_empty_room_recording(
+    smoothed: dict[str, Any],
+    empty_room_baseline: dict[str, Any] | None,
+) -> bool:
+    if empty_room_baseline is None:
+        return False
+
+    empty_room_comparison = build_empty_room_comparison(smoothed, empty_room_baseline)
+    departure_level = classify_baseline_departure(empty_room_comparison)
+    sen_data = smoothed.get("sen0628") or {}
+    microphone_data = smoothed.get("usb_microphone") or {}
+    occupancy_confidence = compute_occupancy_confidence(smoothed, empty_room_baseline)
+    compared_metric_count = 0
+    changed_metric_count = 0
+    if isinstance(empty_room_comparison, dict):
+        compared_metric_count = int(empty_room_comparison.get("compared_metric_count") or 0)
+        changed_metric_count = int(empty_room_comparison.get("changed_metric_count") or 0)
+    change_ratio = (
+        float(changed_metric_count) / float(compared_metric_count)
+        if compared_metric_count > 0
+        else 1.0
+    )
+
+    near_points = float(sen_data.get("near_points") or 0.0)
+    floor_occupied_points = float(sen_data.get("floor_occupied_points") or 0.0)
+    max_obstruction_height_mm = float(sen_data.get("max_obstruction_height_mm") or 0.0)
+    audio_activity_score = float(microphone_data.get("activity_score") or 0.0)
+
+    no_visible_sen0628_occupancy = (
+        near_points <= 0.5
+        and floor_occupied_points <= 0.5
+        and max_obstruction_height_mm <= 80.0
+    )
+    quiet_audio = audio_activity_score <= 1.0
+    strong_live_occupancy = float(occupancy_confidence.get("occupancy_confidence") or 0.0) >= 0.58
+
+    if strong_live_occupancy:
+        return False
+    if departure_level == "minimal":
+        return True
+    if departure_level == "weak" and change_ratio <= 0.16:
+        return True
+    if departure_level == "weak" and no_visible_sen0628_occupancy and quiet_audio:
+        return True
+    return False
+
+
+def build_empty_room_match_summary(
+    smoothed: dict[str, Any],
+    empty_room_baseline: dict[str, Any] | None,
+) -> dict[str, Any]:
+    empty_room_comparison = build_empty_room_comparison(smoothed, empty_room_baseline)
+    departure_level = classify_baseline_departure(empty_room_comparison)
+    matches_empty_room = baseline_matches_empty_room_recording(smoothed, empty_room_baseline)
+    sen_data = smoothed.get("sen0628") or {}
+    microphone_data = smoothed.get("usb_microphone") or {}
+
+    near_points = float(sen_data.get("near_points") or 0.0)
+    floor_occupied_points = float(sen_data.get("floor_occupied_points") or 0.0)
+    max_obstruction_height_mm = float(sen_data.get("max_obstruction_height_mm") or 0.0)
+    audio_activity_score = float(microphone_data.get("activity_score") or 0.0)
+    compared_metric_count = 0
+    changed_metric_count = 0
+    if isinstance(empty_room_comparison, dict):
+        compared_metric_count = int(empty_room_comparison.get("compared_metric_count") or 0)
+        changed_metric_count = int(empty_room_comparison.get("changed_metric_count") or 0)
+    change_ratio = (
+        round(float(changed_metric_count) / float(compared_metric_count), 3)
+        if compared_metric_count > 0
+        else None
+    )
+    occupancy_confidence = compute_occupancy_confidence(smoothed, empty_room_baseline)
+
+    return {
+        "baseline_available": empty_room_baseline is not None,
+        "matches_empty_room": matches_empty_room,
+        "departure_level": departure_level,
+        "compared_metric_count": compared_metric_count,
+        "changed_metric_count": changed_metric_count,
+        "change_ratio": change_ratio,
+        "near_points": near_points,
+        "floor_occupied_points": floor_occupied_points,
+        "max_obstruction_height_mm": max_obstruction_height_mm,
+        "audio_activity_score": audio_activity_score,
+        "occupancy_confidence": occupancy_confidence,
+    }
+
+
+def build_llm_occupancy_evidence(
+    smoothed: dict[str, Any],
+    fallback_plan: dict[str, Any],
+    empty_room_comparison: dict[str, Any] | None,
+    empty_room_baseline: dict[str, Any] | None,
+) -> dict[str, Any]:
+    descriptors = fallback_plan["descriptors"]
+    combined_ld = smoothed.get("ld2410c") or {}
+    front_ld = smoothed.get("ld2410c_front") or {}
+    back_ld = smoothed.get("ld2410c_back") or {}
+    sen_data = smoothed.get("sen0628") or {}
+    top_changed_metrics = []
+    if isinstance(empty_room_comparison, dict):
+        changed_metrics = empty_room_comparison.get("top_changed_metrics")
+        if isinstance(changed_metrics, list):
+            top_changed_metrics = [
+                item.get("metric")
+                for item in changed_metrics[:MAX_BASELINE_CHANGED_METRICS]
+                if isinstance(item, dict) and isinstance(item.get("metric"), str)
+            ]
+    occupancy_confidence = compute_occupancy_confidence(smoothed, empty_room_baseline)
+
+    return {
+        "instruction": (
+            "Estimate human count from live sensor evidence relative to the empty-room baseline. "
+            "Use heuristic_interpretation only as a fallback if the direct evidence is ambiguous."
+        ),
+        "baseline_departure_level": classify_baseline_departure(empty_room_comparison),
+        "baseline_changed_metric_names": top_changed_metrics,
+        "heuristic_count_guess": {
+            "presence_count": descriptors.get("presence_count"),
+            "figure_count": descriptors.get("figure_count"),
+            "presence_activity": descriptors.get("presence_activity"),
+        },
+        "ld2410c_evidence": {
+            "combined_target_state": combined_ld.get("target_state"),
+            "combined_out": combined_ld.get("out"),
+            "combined_moving_energy": combined_ld.get("moving_energy"),
+            "combined_stationary_energy": combined_ld.get("stationary_energy"),
+            "combined_detection_distance_cm": combined_ld.get("detection_distance_cm"),
+            "front_target_state": front_ld.get("target_state"),
+            "front_out": front_ld.get("out"),
+            "front_moving_energy": front_ld.get("moving_energy"),
+            "front_stationary_energy": front_ld.get("stationary_energy"),
+            "back_target_state": back_ld.get("target_state"),
+            "back_out": back_ld.get("out"),
+            "back_moving_energy": back_ld.get("moving_energy"),
+            "back_stationary_energy": back_ld.get("stationary_energy"),
+        },
+        "sen0628_evidence": {
+            "valid_points": sen_data.get("valid_points"),
+            "near_points": sen_data.get("near_points"),
+            "mid_points": sen_data.get("mid_points"),
+            "far_points": sen_data.get("far_points"),
+            "floor_occupied_points": sen_data.get("floor_occupied_points"),
+            "left_occupied_points": sen_data.get("left_occupied_points"),
+            "center_occupied_points": sen_data.get("center_occupied_points"),
+            "right_occupied_points": sen_data.get("right_occupied_points"),
+            "left_close_points": sen_data.get("left_close_points"),
+            "center_close_points": sen_data.get("center_close_points"),
+            "right_close_points": sen_data.get("right_close_points"),
+            "left_zone_mm": sen_data.get("left_zone_mm"),
+            "center_zone_mm": sen_data.get("center_zone_mm"),
+            "right_zone_mm": sen_data.get("right_zone_mm"),
+            "mean_mm": sen_data.get("mean_mm"),
+            "occupied_zone_count": occupancy_confidence.get("occupied_zone_count"),
+            "spread_score": occupancy_confidence.get("sen_spread_score"),
+        },
+        "microphone_evidence": {
+            "activity_score": (smoothed.get("usb_microphone") or {}).get("activity_score"),
+            "relative_db": (smoothed.get("usb_microphone") or {}).get("relative_db"),
+        },
+        "empty_room_match": build_empty_room_match_summary(
+            smoothed,
+            empty_room_baseline,
+        ),
+        "occupancy_confidence": occupancy_confidence,
+    }
 
 
 def radar_sensor_strength(ld_data):
@@ -801,6 +1089,293 @@ def determine_ld_zone_activity(front_data, back_data):
     }
 
 
+def figure_count_to_presence_label(figure_count: int) -> str:
+    if figure_count <= 0:
+        return "no people"
+    if figure_count == 1:
+        return "one person"
+    if figure_count == 2:
+        return "two people"
+    if figure_count == 3:
+        return "three people"
+    return "four or more people"
+
+
+def presence_label_to_figure_count(presence_count: str, fallback: int = 0) -> int:
+    normalized = str(presence_count or "").strip().lower()
+    if normalized == "no people":
+        return 0
+    if normalized == "one person":
+        return 1
+    if normalized == "two people":
+        return 2
+    if normalized == "three people":
+        return 3
+    if normalized == "four or more people":
+        return 4
+    return fallback
+
+
+def compute_occupancy_confidence(
+    smoothed: dict[str, Any],
+    empty_room_baseline: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    combined_ld = smoothed.get("ld2410c") or {}
+    front_ld = smoothed.get("ld2410c_front") or {}
+    back_ld = smoothed.get("ld2410c_back") or {}
+    sen_data = smoothed.get("sen0628") or {}
+    microphone_data = smoothed.get("usb_microphone") or {}
+    baseline_comparison = build_empty_room_comparison(smoothed, empty_room_baseline)
+    departure_level = classify_baseline_departure(baseline_comparison)
+    ld_zone_activity = determine_ld_zone_activity(front_ld, back_ld)
+
+    front_strength = float(ld_zone_activity.get("front_strength") or 0.0)
+    back_strength = float(ld_zone_activity.get("back_strength") or 0.0)
+    combined_strength = float(radar_sensor_strength(combined_ld))
+    active_ld_zone_count = len(ld_zone_activity.get("active_zones") or [])
+    radar_score = (
+        clamp((front_strength + back_strength + (0.6 * combined_strength)) / 180.0, 0.0, 1.0)
+    )
+    if active_ld_zone_count >= 2:
+        radar_score = clamp(radar_score + 0.15, 0.0, 1.0)
+
+    zone_strengths = sen0628_zone_strengths(sen_data)
+    occupied_zone_count = sum(1 for value in zone_strengths.values() if float(value or 0.0) >= 2.0)
+    occupied_zone_count_strong = sum(1 for value in zone_strengths.values() if float(value or 0.0) >= 4.0)
+    near_points = float(sen_data.get("near_points") or 0.0)
+    mid_points = float(sen_data.get("mid_points") or 0.0)
+    floor_occupied_points = float(sen_data.get("floor_occupied_points") or 0.0)
+    sen_spread_score = clamp(
+        (
+            min(1.0, occupied_zone_count / 3.0)
+            + min(1.0, occupied_zone_count_strong / 2.0)
+            + min(1.0, floor_occupied_points / 12.0)
+            + min(1.0, near_points / 10.0)
+            + min(1.0, mid_points / 18.0)
+        )
+        / 4.0,
+        0.0,
+        1.0,
+    )
+
+    audio_activity_score = float(microphone_data.get("activity_score") or 0.0)
+    audio_support = clamp(audio_activity_score / 4.0, 0.0, 1.0)
+    if radar_score < 0.22 and sen_spread_score < 0.2:
+        audio_support = min(audio_support, 0.18)
+
+    baseline_score = {
+        "unknown": 0.0,
+        "minimal": 0.0,
+        "weak": 0.2,
+        "moderate": 0.55,
+        "strong": 0.9,
+    }.get(departure_level, 0.0)
+    total_confidence = clamp(
+        (0.38 * radar_score)
+        + (0.38 * sen_spread_score)
+        + (0.12 * audio_support)
+        + (0.22 * baseline_score),
+        0.0,
+        1.0,
+    )
+
+    return {
+        "occupancy_confidence": round(total_confidence, 3),
+        "radar_score": round(radar_score, 3),
+        "sen_spread_score": round(sen_spread_score, 3),
+        "audio_support": round(audio_support, 3),
+        "baseline_departure_score": round(baseline_score, 3),
+        "active_ld_zone_count": active_ld_zone_count,
+        "occupied_zone_count": occupied_zone_count,
+        "occupied_zone_count_strong": occupied_zone_count_strong,
+        "front_strength": round(front_strength, 1),
+        "back_strength": round(back_strength, 1),
+        "floor_occupied_points": round(floor_occupied_points, 2),
+        "near_points": round(near_points, 2),
+        "mid_points": round(mid_points, 2),
+        "audio_activity_score": round(audio_activity_score, 3),
+        "baseline_departure_level": departure_level,
+    }
+
+
+def build_presence_count_diagnostics(
+    ld_data,
+    sen_data,
+    front_ld_data=None,
+    back_ld_data=None,
+    microphone_data=None,
+    occupancy_confidence_details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    front_strength = radar_sensor_strength(front_ld_data)
+    back_strength = radar_sensor_strength(back_ld_data)
+    combined_strength = radar_sensor_strength(ld_data)
+    active_ld_zones = sum(1 for strength in (front_strength, back_strength) if strength >= 18.0)
+    combined_out = int((ld_data or {}).get("out") or 0)
+    moving_energy = float((ld_data or {}).get("moving_energy") or 0.0)
+    stationary_energy = float((ld_data or {}).get("stationary_energy") or 0.0)
+    target_state = (ld_data or {}).get("target_state")
+
+    zone_strengths = sen0628_zone_strengths(sen_data)
+    occupied_zone_count = sum(1 for value in zone_strengths.values() if float(value or 0.0) >= 2.0)
+    strong_zone_count = sum(1 for value in zone_strengths.values() if float(value or 0.0) >= 4.0)
+    floor_occupied_points = float((sen_data or {}).get("floor_occupied_points") or 0.0)
+    near_points = float((sen_data or {}).get("near_points") or 0.0)
+    mid_points = float((sen_data or {}).get("mid_points") or 0.0)
+    audio_activity_score = float((microphone_data or {}).get("activity_score") or 0.0)
+
+    no_people_signature = (
+        target_state == "NO_TARGET"
+        and combined_out == 0
+        and active_ld_zones == 0
+        and occupied_zone_count == 0
+        and floor_occupied_points <= 0.5
+        and near_points <= 0.5
+    )
+
+    def radar_zone_contribution(zone_strength: float, zone_data) -> float:
+        if zone_strength < 18.0:
+            return 0.0
+        contribution = 0.55
+        if zone_strength >= 42.0:
+            contribution = 0.8
+        if zone_strength >= 72.0:
+            contribution = 1.0
+        zone_state = (zone_data or {}).get("target_state")
+        if zone_state == "MOVING_AND_STATIONARY":
+            contribution += 0.08
+        return contribution
+
+    front_radar_contribution = radar_zone_contribution(front_strength, front_ld_data)
+    back_radar_contribution = radar_zone_contribution(back_strength, back_ld_data)
+    radar_bridge_contribution = 0.0
+    if active_ld_zones >= 2 and combined_strength >= 48.0:
+        radar_bridge_contribution += 0.18
+    if active_ld_zones >= 2 and combined_out >= 1:
+        radar_bridge_contribution += 0.08
+    if combined_strength >= 88.0 and active_ld_zones >= 2:
+        radar_bridge_contribution += 0.08
+
+    sen_contribution = 0.0
+    if occupied_zone_count >= 1:
+        sen_contribution += 0.3
+    if occupied_zone_count >= 2:
+        sen_contribution += 0.45
+    if occupied_zone_count >= 3:
+        sen_contribution += 0.4
+    if strong_zone_count >= 2:
+        sen_contribution += 0.22
+    if floor_occupied_points >= 8.0:
+        sen_contribution += 0.22
+    if floor_occupied_points >= 14.0:
+        sen_contribution += 0.18
+    if near_points >= 8.0 and mid_points >= 12.0:
+        sen_contribution += 0.18
+
+    preliminary_score = (
+        front_radar_contribution
+        + back_radar_contribution
+        + radar_bridge_contribution
+        + sen_contribution
+    )
+
+    audio_contribution = 0.0
+    if preliminary_score >= PRESENCE_COUNT_SCORE_THRESHOLDS[2]:
+        audio_contribution = min(0.16, audio_activity_score / 18.0)
+
+    total_count_score = preliminary_score + audio_contribution
+    multi_zone_corroboration = 0
+    if active_ld_zones >= 2:
+        multi_zone_corroboration += 1
+    if occupied_zone_count >= 2:
+        multi_zone_corroboration += 1
+    if floor_occupied_points >= 12.0 or (near_points >= 8.0 and mid_points >= 12.0):
+        multi_zone_corroboration += 1
+
+    max_supported_count = 1
+    if active_ld_zones >= 1 or occupied_zone_count >= 1:
+        max_supported_count = 2
+    if multi_zone_corroboration >= 2 and total_count_score >= PRESENCE_COUNT_SCORE_THRESHOLDS[3]:
+        max_supported_count = 3
+    if (
+        multi_zone_corroboration >= 3
+        and active_ld_zones >= 2
+        and occupied_zone_count >= 2
+        and total_count_score >= PRESENCE_COUNT_SCORE_THRESHOLDS[4]
+    ):
+        max_supported_count = 4
+
+    if no_people_signature:
+        final_figure_count = 0
+        final_presence_label = "no people"
+    elif total_count_score < 0.72:
+        if active_ld_zones > 0 or occupied_zone_count > 0 or moving_energy >= 25 or stationary_energy >= 25:
+            final_figure_count = 0
+            final_presence_label = "uncertain occupancy"
+        else:
+            final_figure_count = 0
+            final_presence_label = "no people"
+    elif total_count_score < PRESENCE_COUNT_SCORE_THRESHOLDS[2]:
+        final_figure_count = 1
+        final_presence_label = "one person"
+    elif total_count_score < PRESENCE_COUNT_SCORE_THRESHOLDS[3]:
+        final_figure_count = 2
+        final_presence_label = "two people"
+    elif total_count_score < PRESENCE_COUNT_SCORE_THRESHOLDS[4]:
+        final_figure_count = min(3, max_supported_count)
+        final_presence_label = (
+            "three people" if final_figure_count >= 3 else "two people"
+        )
+    else:
+        if max_supported_count >= 4:
+            final_figure_count = 4
+            final_presence_label = "four or more people"
+        elif max_supported_count >= 3:
+            final_figure_count = 3
+            final_presence_label = "three people"
+        else:
+            final_figure_count = 2
+            final_presence_label = "two people"
+
+    baseline_contribution = 0.0
+    total_occupancy_confidence = 0.0
+    if isinstance(occupancy_confidence_details, dict):
+        baseline_contribution = float(occupancy_confidence_details.get("baseline_departure_score") or 0.0)
+        total_occupancy_confidence = float(occupancy_confidence_details.get("occupancy_confidence") or 0.0)
+
+    return {
+        "front_radar_contribution": round(front_radar_contribution, 3),
+        "back_radar_contribution": round(back_radar_contribution, 3),
+        "radar_bridge_contribution": round(radar_bridge_contribution, 3),
+        "sen_contribution": round(sen_contribution, 3),
+        "audio_contribution": round(audio_contribution, 3),
+        "baseline_contribution": round(baseline_contribution, 3),
+        "total_occupancy_confidence": round(total_occupancy_confidence, 3),
+        "total_count_score": round(total_count_score, 3),
+        "multi_zone_corroboration": multi_zone_corroboration,
+        "active_ld_zones": active_ld_zones,
+        "occupied_zone_count": occupied_zone_count,
+        "floor_occupied_points": round(floor_occupied_points, 2),
+        "final_presence_label": final_presence_label,
+        "final_figure_count": final_figure_count,
+    }
+
+
+def log_presence_count_diagnostics(diagnostics: dict[str, Any]) -> None:
+    print(
+        "[COUNT_DIAG] "
+        f"front_radar={diagnostics.get('front_radar_contribution')} "
+        f"back_radar={diagnostics.get('back_radar_contribution')} "
+        f"sen0628={diagnostics.get('sen_contribution')} "
+        f"audio={diagnostics.get('audio_contribution')} "
+        f"baseline={diagnostics.get('baseline_contribution')} "
+        f"occupancy_confidence={diagnostics.get('total_occupancy_confidence')} "
+        f"count_score={diagnostics.get('total_count_score')} "
+        f"corroboration={diagnostics.get('multi_zone_corroboration')} "
+        f"presence_label={diagnostics.get('final_presence_label')} "
+        f"figure_count={diagnostics.get('final_figure_count')}"
+    )
+
+
 def interpret_presence(ld_data):
     if not ld_data:
         return "presence uncertain"
@@ -828,25 +1403,27 @@ def interpret_presence(ld_data):
     return "presence uncertain"
 
 
-def estimate_presence_count(ld_data, sen_data):
-    if not ld_data:
-        return "uncertain number of people"
+def estimate_presence_count(
+    ld_data,
+    sen_data,
+    front_ld_data=None,
+    back_ld_data=None,
+    microphone_data=None,
+    occupancy_confidence_details: dict[str, Any] | None = None,
+):
+    if not ld_data and not sen_data:
+        return "uncertain occupancy"
 
-    target_state = ld_data.get("target_state")
-    out_state = ld_data.get("out")
-    moving_energy = ld_data.get("moving_energy") or 0
-    stationary_energy = ld_data.get("stationary_energy") or 0
-
-    if target_state == "NO_TARGET" and out_state == 0:
-        return "no people"
-
-    if target_state == "MOVING_AND_STATIONARY":
-        return "two people"
-    if moving_energy >= 70 and stationary_energy >= 35:
-        return "two people"
-    if moving_energy >= 45 or stationary_energy >= 30 or out_state == 1:
-        return "one person"
-    return "uncertain number of people"
+    diagnostics = build_presence_count_diagnostics(
+        ld_data,
+        sen_data,
+        front_ld_data,
+        back_ld_data,
+        microphone_data,
+        occupancy_confidence_details,
+    )
+    log_presence_count_diagnostics(diagnostics)
+    return str(diagnostics["final_presence_label"])
 
 
 def classify_depth_band(ld_data, sen_data):
@@ -929,12 +1506,15 @@ def estimate_people_layout(ld_data, sen_data, presence_activity, presence_count)
             "layout_mode": "empty",
         }
 
+    figure_count = presence_label_to_figure_count(str(presence_count), 1)
     zone_strengths = sen0628_zone_strengths(sen_data)
     sorted_zones = sorted(zone_strengths.items(), key=lambda item: item[1], reverse=True)
-    active_zones = [name for name, value in sorted_zones if value >= 3]
+    active_zones = [name for name, value in sorted_zones if value >= 2]
     primary_zone = sorted_zones[0][0]
     secondary_zone = sorted_zones[1][0]
     depth_band = classify_depth_band(ld_data, sen_data)
+    floor_occupied_points = float((sen_data or {}).get("floor_occupied_points") or 0.0)
+    near_points = float((sen_data or {}).get("near_points") or 0.0)
 
     zone_labels = {
         "left": "left side of the room",
@@ -947,33 +1527,7 @@ def estimate_people_layout(ld_data, sen_data, presence_activity, presence_count)
         "back": "toward the back of the room",
     }
 
-    if presence_count == "two people":
-        if len(active_zones) >= 2:
-            first_zone = active_zones[0]
-            second_zone = active_zones[1]
-            placement_summary = f"two people split between {first_zone} and {second_zone}"
-            placement_prompt = (
-                f"show exactly two human figures, one on the {zone_labels[first_zone]}, "
-                f"the other on the {zone_labels[second_zone]}, both {depth_labels[depth_band]}"
-            )
-        else:
-            placement_summary = f"two people clustered on the {primary_zone}"
-            placement_prompt = (
-                f"show exactly two human figures clustered on the {zone_labels[primary_zone]}, "
-                f"with slight separation between them, both {depth_labels[depth_band]}"
-            )
-        return {
-            "figure_count": 2,
-            "placement_summary": placement_summary,
-            "placement_prompt": placement_prompt,
-            "depth_band": depth_band,
-            "primary_zone": primary_zone,
-            "secondary_zone": secondary_zone,
-            "active_zones": active_zones,
-            "layout_mode": "split" if len(active_zones) >= 2 else "clustered",
-        }
-
-    if presence_activity == "presence uncertain" and sorted_zones[0][1] < 2:
+    if presence_activity == "presence uncertain" and sorted_zones[0][1] < 2 and figure_count <= 1:
         return {
             "figure_count": 0,
             "placement_summary": "empty room",
@@ -985,19 +1539,97 @@ def estimate_people_layout(ld_data, sen_data, presence_activity, presence_count)
             "layout_mode": "empty",
         }
 
-    preferred_zone = primary_zone if sorted_zones[0][1] >= 2 else "center"
-    return {
-        "figure_count": 1,
-        "placement_summary": f"one person near the {preferred_zone}",
-        "placement_prompt": (
-            f"show exactly one human figure on the {zone_labels[preferred_zone]}, "
+    if figure_count == 1:
+        preferred_zone = primary_zone if sorted_zones[0][1] >= 2 else "center"
+        return {
+            "figure_count": 1,
+            "placement_summary": f"one person near the {preferred_zone}",
+            "placement_prompt": (
+                f"show exactly one human figure on the {zone_labels[preferred_zone]}, "
+                f"{depth_labels[depth_band]}"
+            ),
+            "depth_band": depth_band,
+            "primary_zone": preferred_zone,
+            "secondary_zone": secondary_zone,
+            "active_zones": active_zones,
+            "layout_mode": "single",
+        }
+
+    if figure_count == 2:
+        if len(active_zones) >= 2:
+            first_zone = active_zones[0]
+            second_zone = active_zones[1]
+            placement_summary = f"two people split between {first_zone} and {second_zone}"
+            placement_prompt = (
+                f"show exactly two human figures, one on the {zone_labels[first_zone]}, "
+                f"the other on the {zone_labels[second_zone]}, both {depth_labels[depth_band]}"
+            )
+            layout_mode = "split"
+        else:
+            placement_summary = f"two people clustered on the {primary_zone}"
+            placement_prompt = (
+                f"show exactly two human figures clustered on the {zone_labels[primary_zone]}, "
+                f"with slight separation between them, both {depth_labels[depth_band]}"
+            )
+            layout_mode = "clustered"
+        return {
+            "figure_count": 2,
+            "placement_summary": placement_summary,
+            "placement_prompt": placement_prompt,
+            "depth_band": depth_band,
+            "primary_zone": primary_zone,
+            "secondary_zone": secondary_zone,
+            "active_zones": active_zones,
+            "layout_mode": layout_mode,
+        }
+
+    distributed_count_text = "three human figures" if figure_count == 3 else "several human figures"
+    if len(active_zones) >= 3 or floor_occupied_points >= 15:
+        layout_mode = "room-wide"
+        placement_summary = f"{presence_count} distributed across the room"
+        placement_prompt = (
+            f"show {distributed_count_text} spread across the left, center, and right areas of the room, "
+            f"with visible spacing between bodies, {depth_labels[depth_band]}"
+        )
+    elif len(active_zones) >= 2:
+        layout_mode = "dispersed"
+        placement_summary = f"{presence_count} dispersed across {active_zones[0]} and {active_zones[1]}"
+        placement_prompt = (
+            f"show {distributed_count_text} distributed across the {zone_labels[active_zones[0]]} "
+            f"and the {zone_labels[active_zones[1]]}, with varied spacing and readable separation, "
             f"{depth_labels[depth_band]}"
-        ),
+        )
+    elif depth_band == "front" or near_points >= 8:
+        layout_mode = "front-heavy"
+        placement_summary = f"{presence_count} weighted toward the front"
+        placement_prompt = (
+            f"show {distributed_count_text} weighted toward the front half of the room, "
+            "with one or two figures larger in scale and others receding behind them"
+        )
+    elif depth_band == "back":
+        layout_mode = "back-heavy"
+        placement_summary = f"{presence_count} held deeper in the room"
+        placement_prompt = (
+            f"show {distributed_count_text} deeper toward the back of the room, "
+            "with layered spacing and smaller more distant bodies behind nearer ones"
+        )
+    else:
+        layout_mode = "clustered"
+        placement_summary = f"{presence_count} gathered near the {primary_zone}"
+        placement_prompt = (
+            f"show {distributed_count_text} gathered around the {zone_labels[primary_zone]}, "
+            "with partial clustering but readable body separation"
+        )
+
+    return {
+        "figure_count": figure_count,
+        "placement_summary": placement_summary,
+        "placement_prompt": placement_prompt,
         "depth_band": depth_band,
-        "primary_zone": preferred_zone,
+        "primary_zone": primary_zone,
         "secondary_zone": secondary_zone,
         "active_zones": active_zones,
-        "layout_mode": "single",
+        "layout_mode": layout_mode,
     }
 
 
@@ -1013,13 +1645,36 @@ def apply_ld_zone_bias(people_layout, ld_zone_activity):
         updated_layout["dominant_ld_zone"] = dominant_ld_zone
         return updated_layout
 
-    if updated_layout["figure_count"] >= 2 and len(active_ld_zones) >= 2:
+    if updated_layout["figure_count"] >= 3 and len(active_ld_zones) >= 2:
+        updated_layout["placement_summary"] = (
+            f"{figure_count_to_presence_label(int(updated_layout['figure_count']))} layered from front to back"
+        )
+        updated_layout["placement_prompt"] = (
+            "show several human figures clearly visible from the front zone into the back of the room, "
+            "with staggered depth, mixed scale, and readable spacing between bodies"
+        )
+        updated_layout["layout_mode"] = "dispersed"
+        updated_layout["primary_zone"] = "front"
+        updated_layout["secondary_zone"] = "back"
+    elif updated_layout["figure_count"] >= 2 and len(active_ld_zones) >= 2:
         updated_layout["placement_summary"] = "two people split between front and back"
         updated_layout["placement_prompt"] = (
             "show exactly two human figures, one nearer the front of the room and "
             "the other deeper toward the back of the room"
         )
         updated_layout["layout_mode"] = "depth_split"
+        updated_layout["primary_zone"] = "front"
+        updated_layout["secondary_zone"] = "back"
+    elif dominant_ld_zone == "front" and updated_layout["figure_count"] >= 2:
+        updated_layout["placement_summary"] = (
+            f"{figure_count_to_presence_label(int(updated_layout['figure_count']))} weighted toward the front"
+        )
+        updated_layout["placement_prompt"] = (
+            "show multiple human figures with front-heavy placement, larger figures nearer the foreground "
+            "and smaller figures receding behind them"
+        )
+        updated_layout["layout_mode"] = "front-heavy"
+        updated_layout["depth_band"] = "front"
         updated_layout["primary_zone"] = "front"
         updated_layout["secondary_zone"] = "back"
     elif dominant_ld_zone == "front":
@@ -1030,6 +1685,17 @@ def apply_ld_zone_bias(people_layout, ld_zone_activity):
         updated_layout["depth_band"] = "front"
         updated_layout["primary_zone"] = "front"
         updated_layout["secondary_zone"] = "back"
+    elif dominant_ld_zone == "back" and updated_layout["figure_count"] >= 2:
+        updated_layout["placement_summary"] = (
+            f"{figure_count_to_presence_label(int(updated_layout['figure_count']))} held toward the back"
+        )
+        updated_layout["placement_prompt"] = (
+            "show multiple human figures deeper in the room, layered toward the back with visible spacing"
+        )
+        updated_layout["layout_mode"] = "back-heavy"
+        updated_layout["depth_band"] = "back"
+        updated_layout["primary_zone"] = "back"
+        updated_layout["secondary_zone"] = "front"
     elif dominant_ld_zone == "back":
         updated_layout["placement_summary"] = "one person near the back"
         updated_layout["placement_prompt"] = (
@@ -1078,11 +1744,22 @@ def build_figure_variation_modifiers(descriptors: dict[str, Any]) -> list[str]:
             modifiers.append("smaller distant figure")
         else:
             modifiers.append("single mid-room figure")
-    else:
+    elif figure_count == 2:
         if layout_mode in ("split", "depth_split"):
             modifiers.append("two separated figures")
         else:
             modifiers.append("clustered figure grouping")
+    else:
+        if layout_mode == "room-wide":
+            modifiers.append("distributed human presence across the space")
+        elif layout_mode == "dispersed":
+            modifiers.append("several spaced bodies across the room")
+        elif layout_mode == "front-heavy":
+            modifiers.append("front-weighted multi-figure grouping")
+        elif layout_mode == "back-heavy":
+            modifiers.append("back-layered figure grouping")
+        else:
+            modifiers.append("clustered multi-figure grouping")
 
     if primary_zone == "left":
         modifiers.append("figure grouping shifted toward left side")
@@ -1102,10 +1779,16 @@ def build_figure_variation_modifiers(descriptors: dict[str, Any]) -> list[str]:
     else:
         modifiers.append("figures shifted toward middle depth")
 
+    if figure_count >= 3:
+        modifiers.append("multiple bodies visible at first glance")
     if layout_mode == "clustered":
         modifiers.append("tighter figure spacing")
     elif layout_mode in ("split", "depth_split"):
         modifiers.append("wider spacing between figures")
+    elif layout_mode == "room-wide":
+        modifiers.append("left-center-right spread retained")
+    elif layout_mode in ("dispersed", "front-heavy", "back-heavy"):
+        modifiers.append("mixed scale and spacing across figures")
     else:
         modifiers.append("pose and silhouette may stay somewhat ambiguous")
 
@@ -1404,23 +2087,36 @@ def build_people_directive(descriptors):
         "mid-room": "held around middle depth",
         "back": "leaning farther back in the room",
     }.get(str(depth_band), "held around middle depth")
-    count_text = (
-        "require two visible human figures as the occupancy revision"
-        if figure_count == 2
-        else "require one visible human figure as the occupancy revision"
-    )
-    exact_count_text = (
-        "show exactly two adult human figures and no additional people anywhere in the frame"
-        if figure_count == 2
-        else "show exactly one adult human figure and no additional people anywhere in the frame"
-    )
-    spacing_text = (
-        "keep the two bodies clearly separated with readable negative space between them"
-        if layout_mode in ("split", "depth_split")
-        else "keep the two bodies close but still clearly distinct from each other"
-        if layout_mode == "clustered"
-        else "keep the single body stable and clearly readable"
-    )
+    if figure_count >= 4:
+        count_text = "require several visible human figures as the occupancy revision"
+        exact_count_text = (
+            "show approximately four or more adult human figures, clearly visible at first glance, "
+            "without turning the room into a dense crowd"
+        )
+    elif figure_count == 3:
+        count_text = "require three visible human figures as the occupancy revision"
+        exact_count_text = "show approximately three adult human figures, all visibly readable in the room"
+    elif figure_count == 2:
+        count_text = "require two visible human figures as the occupancy revision"
+        exact_count_text = "show exactly two adult human figures and no additional people anywhere in the frame"
+    else:
+        count_text = "require one visible human figure as the occupancy revision"
+        exact_count_text = "show exactly one adult human figure and no additional people anywhere in the frame"
+
+    if figure_count >= 3:
+        spacing_text = (
+            "show several bodies visible at first glance, keep spacing, clustering, and scale differences readable"
+            if layout_mode in ("dispersed", "room-wide", "front-heavy", "back-heavy")
+            else "keep the multi-figure grouping legible, with overlapping ambiguity but still readable separation"
+        )
+    elif figure_count == 2:
+        spacing_text = (
+            "keep the two bodies clearly separated with readable negative space between them"
+            if layout_mode in ("split", "depth_split")
+            else "keep the two bodies close but still clearly distinct from each other"
+        )
+    else:
+        spacing_text = "keep the single body stable and clearly readable"
     audio_text = {
         "strong shared room noise": "treat the audio as strong evidence of multiple occupants or sustained shared activity, but do not force extra bodies without support from the other sensors",
         "moderate human-made room noise": "treat the audio as supporting evidence of ongoing occupancy and possible multiple people, while keeping the count conservative",
@@ -1428,13 +2124,20 @@ def build_people_directive(descriptors):
         "very quiet room": "treat the audio as weak evidence for additional occupants",
         "audio unavailable": "do not infer extra occupants from missing audio",
     }.get(str(descriptors.get("audio_activity")), "keep the mood restrained and observational")
+    multi_figure_text = (
+        "for three or more figures, show distributed human presence across the space and multiple bodies visible at first glance, "
+        if figure_count >= 3
+        else ""
+    )
     return (
         f"human presence is being inferred as {presence}, {count_text}, {exact_count_text}, {zone_text}, {depth_text}, "
         f"{placement_prompt}, "
         "the room must read as visibly occupied, the figures must be noticeable at first glance, "
-        "render complete adult human bodies with stable anatomy and normal proportions, "
-        "show full standing figures instead of fragments, floating parts, shadows, or implied presence, "
+        "render full adult human bodies with stable anatomy and normal proportions, "
+        "show visible human bodies instead of fragments, floating parts, shadows, or implied presence only, "
         "keep the figures legible in the frame with enough scale to stand out from the background, "
+        "keep figures inferred and imperfect rather than portrait-clean, with faces and identities unresolved, "
+        f"{multi_figure_text}"
         "avoid crowds, duplicated bodies, merged silhouettes, extra limbs, and distorted anatomy, "
         f"{spacing_text}, {audio_text}, keep the room secondary to the clearly readable human figures"
     )
@@ -1456,20 +2159,36 @@ def build_prompt_sections(descriptors):
             "new architecture, changed camera angle, dramatic set dressing"
         )
     else:
+        figure_visibility_text = (
+            "for three or more inferred figures, show several human figures clearly visible, distributed human presence across the space, "
+            "and multiple bodies readable at first glance"
+            if int(descriptors.get("figure_count", 0)) >= 3
+            else "figures should occupy a noticeable amount of the frame and remain legible at first glance"
+        )
         composition_directive = (
             f"{COMPOSITION_DIRECTIVE}, keep the same general room and camera view, the room should visibly contain occupants when presence is inferred, "
             "do not render an empty room when presence is inferred, keep background secondary to visible human presence, "
             "preserve the room while allowing figure arrangement to change, figures should occupy a noticeable amount "
-            "of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details"
+            f"of the frame, remain legible at first glance, and serve as the main changing element rather than tiny distant background details, {figure_visibility_text}"
         )
-        negative_prompt = (
-            f"{OPTIONAL_TEXT_UI_EXCLUSION_NEGATIVE_PROMPT}, "
-            "empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, "
-            "tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, "
-            "changed architecture, changed camera angle, new furniture, crowd, group, extra person, extra people, "
-            "duplicate body, duplicated person, merged bodies, fused silhouettes, extra limbs, extra arms, extra legs, "
-            "disconnected limbs, cropped body, cut off body, floating torso, malformed anatomy"
-        )
+        if int(descriptors.get("figure_count", 0)) >= 3:
+            negative_prompt = (
+                f"{OPTIONAL_TEXT_UI_EXCLUSION_NEGATIVE_PROMPT}, "
+                "empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, "
+                "tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, "
+                "changed architecture, changed camera angle, new furniture, duplicate body, duplicated person, merged bodies, "
+                "fused silhouettes, extra limbs, extra arms, extra legs, disconnected limbs, cropped body, cut off body, "
+                "floating torso, malformed anatomy"
+            )
+        else:
+            negative_prompt = (
+                f"{OPTIONAL_TEXT_UI_EXCLUSION_NEGATIVE_PROMPT}, "
+                "empty room, empty scene, unoccupied room, no people, no person, absent occupant, vacant interior, "
+                "tiny distant people, people barely visible, occupants lost in the background, alternate room, different room, "
+                "changed architecture, changed camera angle, new furniture, crowd, group, extra person, extra people, "
+                "duplicate body, duplicated person, merged bodies, fused silhouettes, extra limbs, extra arms, extra legs, "
+                "disconnected limbs, cropped body, cut off body, floating torso, malformed anatomy"
+            )
 
     return {
         "base_scene_prompt": BASE_SCENE_PROMPT,
@@ -1545,6 +2264,18 @@ def has_active_seed_cycle(shared_state: dict[str, Any] | None) -> bool:
     )
 
 
+def get_seed_cycle_interval_seconds(shared_state: dict[str, Any] | None) -> float | None:
+    if not isinstance(shared_state, dict):
+        return None
+    seed_cycle = shared_state.get("seed_cycle")
+    if not isinstance(seed_cycle, dict):
+        return None
+    interval_seconds = seed_cycle.get("interval_seconds")
+    if isinstance(interval_seconds, (int, float)) and float(interval_seconds) > 0:
+        return float(interval_seconds)
+    return None
+
+
 def select_generation_seed(shared_state: dict[str, Any]) -> int:
     seed_cycle = shared_state.get("seed_cycle")
     if isinstance(seed_cycle, dict):
@@ -1563,9 +2294,17 @@ def interpret_sensor_state(smoothed):
     back_ld_data = smoothed.get("ld2410c_back")
     microphone_data = smoothed.get("usb_microphone")
     ld_zone_activity = determine_ld_zone_activity(front_ld_data, back_ld_data)
+    occupancy_confidence = compute_occupancy_confidence(smoothed)
 
     presence_activity = interpret_presence(combined_ld_data)
-    presence_count = estimate_presence_count(combined_ld_data, smoothed.get("sen0628"))
+    presence_count = estimate_presence_count(
+        combined_ld_data,
+        smoothed.get("sen0628"),
+        front_ld_data,
+        back_ld_data,
+        microphone_data,
+        occupancy_confidence,
+    )
     people_layout = estimate_people_layout(
         combined_ld_data,
         smoothed.get("sen0628"),
@@ -1601,6 +2340,7 @@ def interpret_sensor_state(smoothed):
         "back_strength": round(ld_zone_activity["back_strength"], 1),
         "active_ld_zones": list(ld_zone_activity["active_zones"]),
         "dominant_ld_zone": ld_zone_activity["dominant_zone"],
+        "occupancy_confidence": occupancy_confidence.get("occupancy_confidence"),
         "figure_count": people_layout["figure_count"],
         "placement_summary": people_layout["placement_summary"],
         "placement_prompt": people_layout["placement_prompt"],
@@ -1652,6 +2392,10 @@ def build_live_inference_lines(descriptors):
         occupancy_line = "room retained; figures reduced"
     elif figure_count == 1:
         occupancy_line = "single figure favored"
+    elif figure_count >= 4:
+        occupancy_line = "room-wide multi-figure state favored"
+    elif figure_count == 3:
+        occupancy_line = "three-figure occupancy favored"
     elif layout_mode in ("split", "depth_split"):
         occupancy_line = "split figure layout favored"
     else:
@@ -1697,6 +2441,98 @@ def build_live_inference_lines(descriptors):
         build_image_foreshadow_line(descriptors),
     ]
     return lines
+
+
+def apply_count_hysteresis(
+    scene_plan: dict[str, Any],
+    smoothed: dict[str, Any],
+    previous_shared_state: dict[str, Any] | None,
+    empty_room_baseline: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not isinstance(previous_shared_state, dict):
+        return scene_plan
+
+    previous_descriptors = previous_shared_state.get("interpreted_state")
+    if not isinstance(previous_descriptors, dict):
+        return scene_plan
+
+    descriptors = dict(scene_plan.get("descriptors") or {})
+    if not descriptors:
+        return scene_plan
+
+    previous_count = int(previous_descriptors.get("figure_count", 0) or 0)
+    current_count = int(descriptors.get("figure_count", 0) or 0)
+    if previous_count == current_count:
+        return scene_plan
+
+    occupancy_confidence = compute_occupancy_confidence(smoothed, empty_room_baseline)
+    count_diagnostics = build_presence_count_diagnostics(
+        smoothed.get("ld2410c"),
+        smoothed.get("sen0628"),
+        smoothed.get("ld2410c_front"),
+        smoothed.get("ld2410c_back"),
+        smoothed.get("usb_microphone"),
+        occupancy_confidence,
+    )
+    count_score = float(count_diagnostics.get("total_count_score") or 0.0)
+    corroboration = int(count_diagnostics.get("multi_zone_corroboration") or 0)
+
+    adjusted_count = current_count
+    if current_count > previous_count:
+        required_score = PRESENCE_COUNT_SCORE_THRESHOLDS.get(current_count, PRESENCE_COUNT_SCORE_THRESHOLDS[4])
+        upgrade_margin = 0.18 if current_count <= 2 else 0.32
+        if current_count >= 3 and corroboration < 2:
+            adjusted_count = previous_count
+        elif previous_count == 0 and current_count >= 2 and corroboration < 2:
+            adjusted_count = 1 if count_score >= PRESENCE_COUNT_SCORE_THRESHOLDS[1] else 0
+        elif count_score < (required_score + upgrade_margin):
+            adjusted_count = previous_count
+    else:
+        hold_threshold = {
+            1: PRESENCE_COUNT_SCORE_THRESHOLDS[1] - 0.12,
+            2: PRESENCE_COUNT_SCORE_THRESHOLDS[2] - 0.2,
+            3: PRESENCE_COUNT_SCORE_THRESHOLDS[3] - 0.28,
+            4: PRESENCE_COUNT_SCORE_THRESHOLDS[4] - 0.3,
+        }.get(previous_count, 0.0)
+        if count_score >= hold_threshold:
+            adjusted_count = previous_count
+
+    if adjusted_count == current_count:
+        return scene_plan
+
+    updated_descriptors = dict(descriptors)
+    updated_descriptors["figure_count"] = adjusted_count
+    updated_descriptors["presence_count"] = figure_count_to_presence_label(adjusted_count)
+    if adjusted_count <= 0 and updated_descriptors.get("presence_activity") != "presence uncertain":
+        updated_descriptors["presence_activity"] = "no presence"
+
+    people_layout = estimate_people_layout(
+        smoothed.get("ld2410c"),
+        smoothed.get("sen0628"),
+        str(updated_descriptors.get("presence_activity")),
+        str(updated_descriptors.get("presence_count")),
+    )
+    people_layout = apply_ld_zone_bias(
+        people_layout,
+        determine_ld_zone_activity(smoothed.get("ld2410c_front"), smoothed.get("ld2410c_back")),
+    )
+    updated_descriptors["figure_count"] = people_layout["figure_count"]
+    updated_descriptors["placement_summary"] = people_layout["placement_summary"]
+    updated_descriptors["placement_prompt"] = people_layout["placement_prompt"]
+    updated_descriptors["depth_band"] = people_layout["depth_band"]
+    updated_descriptors["primary_zone"] = people_layout["primary_zone"]
+    updated_descriptors["secondary_zone"] = people_layout["secondary_zone"]
+    updated_descriptors["active_zones"] = people_layout["active_zones"]
+    updated_descriptors["layout_mode"] = people_layout["layout_mode"]
+    updated_descriptors["figure_variation_modifiers"] = build_figure_variation_modifiers(updated_descriptors)
+
+    updated_scene_plan = dict(scene_plan)
+    updated_scene_plan["descriptors"] = updated_descriptors
+    updated_scene_plan["prompt_sections"] = build_prompt_sections(updated_descriptors)
+    updated_scene_plan["prompt"] = build_image_prompt(updated_descriptors)
+    updated_scene_plan["live_lines"] = build_live_inference_lines(updated_descriptors)
+    updated_scene_plan["state_signature_descriptors"] = updated_descriptors
+    return updated_scene_plan
 
 
 def build_background_continuity_directive() -> str:
@@ -1809,7 +2645,29 @@ def build_language_pass_fallback_preview(fallback_plan: dict[str, Any]) -> str:
     fallback_descriptors = fallback_plan["descriptors"]
     if fallback_descriptors.get("figure_count", 0) > 0:
         return "upcoming image preview: " + fallback_descriptors["placement_summary"]
-    return "upcoming image preview: empty installation space"
+    return "upcoming image preview: likely empty installation space"
+
+
+def coerce_descriptors_to_empty_room(
+    descriptors: dict[str, Any],
+    fallback_plan: dict[str, Any],
+) -> dict[str, Any]:
+    coerced = dict(descriptors)
+    fallback_descriptors = fallback_plan["descriptors"]
+    coerced["presence_activity"] = "no presence"
+    coerced["presence_count"] = "no people"
+    coerced["figure_count"] = 0
+    coerced["presence_location"] = "baseline-like empty room; no visible occupant"
+    coerced["placement_summary"] = "likely empty room"
+    coerced["placement_prompt"] = "show no visible people in the room"
+    coerced["layout_mode"] = "empty"
+    coerced["active_zones"] = []
+    coerced["primary_zone"] = str(fallback_descriptors.get("primary_zone", "center"))
+    coerced["secondary_zone"] = str(fallback_descriptors.get("secondary_zone", "center"))
+    coerced["depth_band"] = str(fallback_descriptors.get("depth_band", "mid-room"))
+    coerced["spatial_certainty"] = "baseline supports likely empty room"
+    coerced["figure_variation_modifiers"] = build_figure_variation_modifiers(coerced)
+    return coerced
 
 
 def sanitize_choice(value: Any, allowed_values: set[str], fallback: str) -> str:
@@ -1843,7 +2701,7 @@ def sanitize_figure_count(value: Any, fallback: int) -> int:
         return fallback
     if isinstance(value, (int, float)):
         count = int(round(float(value)))
-        if count in (0, 1, 2):
+        if 0 <= count <= 5:
             return count
     return fallback
 
@@ -1874,11 +2732,25 @@ def sanitize_scene_interpretation(
         "no people",
         "one person",
         "two people",
+        "three people",
+        "four or more people",
         "presence uncertain",
+        "uncertain occupancy",
     }
     allowed_zone_values = {"left", "center", "right", "front", "back"}
     allowed_depth_band = {"front", "mid-room", "back"}
-    allowed_layout_mode = {"empty", "single", "split", "depth_split", "clustered", "ambiguous"}
+    allowed_layout_mode = {
+        "empty",
+        "single",
+        "split",
+        "depth_split",
+        "clustered",
+        "ambiguous",
+        "dispersed",
+        "front-heavy",
+        "back-heavy",
+        "room-wide",
+    }
 
     descriptors = dict(fallback_descriptors)
     descriptors["presence_activity"] = sanitize_choice(
@@ -1944,10 +2816,17 @@ def sanitize_scene_interpretation(
         descriptors["figure_count"] = 0
         descriptors["presence_count"] = "no people"
         descriptors["layout_mode"] = "empty"
-    elif descriptors["figure_count"] == 1 and descriptors["presence_count"] == "two people":
-        descriptors["presence_count"] = "one person"
-    elif descriptors["figure_count"] >= 2 and descriptors["presence_count"] == "one person":
-        descriptors["presence_count"] = "two people"
+    elif descriptors["presence_count"] in {"presence uncertain", "uncertain occupancy"}:
+        if descriptors["figure_count"] <= 0:
+            descriptors["layout_mode"] = "ambiguous"
+    else:
+        inferred_from_label = presence_label_to_figure_count(
+            str(descriptors["presence_count"]),
+            int(descriptors["figure_count"]),
+        )
+        if descriptors["figure_count"] <= 0 and inferred_from_label > 0:
+            descriptors["figure_count"] = inferred_from_label
+        descriptors["presence_count"] = figure_count_to_presence_label(int(descriptors["figure_count"]))
 
     if descriptors["figure_count"] == 0 and descriptors["presence_activity"] != "presence uncertain":
         descriptors["presence_activity"] = "no presence"
@@ -2150,6 +3029,12 @@ def build_llm_interpretation_payload(
 ) -> dict[str, Any]:
     descriptors = fallback_plan["descriptors"]
     empty_room_comparison = build_empty_room_comparison(smoothed, empty_room_baseline)
+    occupancy_evidence = build_llm_occupancy_evidence(
+        smoothed,
+        fallback_plan,
+        empty_room_comparison,
+        empty_room_baseline,
+    )
     top_changed_metrics = []
     if isinstance(empty_room_comparison, dict):
         changed_metrics = empty_room_comparison.get("top_changed_metrics")
@@ -2184,7 +3069,9 @@ def build_llm_interpretation_payload(
             "available": bool(empty_room_comparison),
             "top_changed_metrics": top_changed_metrics,
             "departure_level": classify_baseline_departure(empty_room_comparison),
+            "empty_room_match": build_empty_room_match_summary(smoothed, empty_room_baseline),
         },
+        "occupancy_evidence": occupancy_evidence,
         "task": {
             "goal": (
                 "infer occupancy, approximate human count, approximate location, and image-driving scene interpretation "
@@ -2229,7 +3116,17 @@ def fetch_openai_language_pass(
         "You are the primary scene interpreter for an installation-space sensing system. "
         "Your job is to interpret the smoothed sensor data itself, not just rewrite heuristic text. "
         "Use heuristic_interpretation as a fallback suggestion, not as the source of truth. "
-        "Occupancy and approximate placement should come from your reasoning over raw_sensor_summary plus baseline_comparison. "
+        "Occupancy and approximate placement should come from your reasoning over raw_sensor_summary, occupancy_evidence, and baseline_comparison. "
+        "Estimate figure_count and presence_count from the live sensor values relative to the empty-room baseline whenever baseline data is available. "
+        "Treat the empty-room baseline as the reference state for deciding whether occupancy is present, but do not let a weak baseline match override strong live occupancy evidence. "
+        "Use LD2410C target states and energies, front/back agreement, and SEN0628 point distribution as the main occupancy evidence. "
+        "Figure_count should be an approximate visible occupancy estimate, not an exact census. "
+        "Strong simultaneous front/back radar activity, high moving and stationary energy, multiple SEN0628 occupied zones, and strong shared audio can justify three or more visible figures. "
+        "If occupancy_evidence.empty_room_match.matches_empty_room is true, treat that as strong evidence for zero people unless multiple sensors clearly contradict it. "
+        "When occupancy_evidence.empty_room_match.matches_empty_room is true, return figure_count=0 and presence_count=no people. "
+        "In that case, placement_summary should explicitly say likely empty room or baseline-like empty room, and placement_prompt should keep visible people out of the image. "
+        "If occupancy_evidence.empty_room_match.change_ratio is low and the SEN0628 occupied and near-point signals remain near zero, follow the empty-room recording even if one radar channel is noisy. "
+        "If occupancy_confidence is high, prefer occupied interpretations even if the empty-room baseline match is weak. "
         "Stay conservative when the evidence is weak or contradictory. "
         "Do not invent extra certainty. "
         "Do not invent room changes, camera changes, furniture, or new architecture. "
@@ -2247,12 +3144,12 @@ def fetch_openai_language_pass(
         "live_inference_lines, image_preview, agent_notes, prompt_modifiers, uncertainty_score, generation_controls. "
         "Allowed values: "
         "presence_activity in [no presence, still presence, active presence, intermittent movement, presence uncertain]; "
-        "presence_count in [no people, one person, two people, presence uncertain]; "
-        "figure_count in [0, 1, 2]; "
+        "presence_count in [no people, one person, two people, three people, four or more people, presence uncertain, uncertain occupancy]; "
+        "figure_count in [0, 1, 2, 3, 4, 5]; "
         "primary_zone and secondary_zone in [left, center, right, front, back]; "
         "active_zones as a short list using those same values; "
         "depth_band in [front, mid-room, back]; "
-        "layout_mode in [empty, single, split, depth_split, clustered, ambiguous]. "
+        "layout_mode in [empty, single, split, depth_split, clustered, ambiguous, dispersed, front-heavy, back-heavy, room-wide]. "
         "Rules: live_inference_lines must be 4 to 5 short lines; "
         "the set of lines should usually include some audio signal and some foreshadowing of the next image state; "
         "not every line needs a rigid function, and the language can vary naturally as long as it stays concise; "
@@ -2267,6 +3164,10 @@ def fetch_openai_language_pass(
         "higher uncertainty should usually increase temperature and top_p modestly while reducing guidance_scale modestly; "
         "generation_controls must be an object with numeric temperature, top_p, guidance_scale values; "
         "keep generation_controls restrained and close to the room-consistency goal rather than pushing into surreal abstraction; "
+        "when baseline departure and live occupancy evidence strongly support people, do not leave figure_count as uncertain; choose an approximate visible count that can extend above two when justified; "
+        "when baseline departure is minimal and occupancy evidence is weak, prefer no people or presence uncertain instead of overstating occupancy; "
+        "when the empty-room baseline match is true, do not keep a person in the scene just because heuristic_interpretation guessed one; "
+        "when the installation still resembles the empty-room recording and occupancy_confidence stays low, the generated image should remain an empty room; "
         "If the evidence is ambiguous, use presence uncertain and cautious placement phrasing rather than guessing. "
         "do not include markdown fences."
     )
@@ -2354,6 +3255,24 @@ def build_scene_plan(
             openai_settings, smoothed, fallback_plan, empty_room_baseline
         )
         sanitized_scene = sanitize_scene_interpretation(scene_interpretation, fallback_plan)
+        occupancy_confidence = compute_occupancy_confidence(smoothed, empty_room_baseline)
+        if (
+            baseline_matches_empty_room_recording(smoothed, empty_room_baseline)
+            and float(occupancy_confidence.get("occupancy_confidence") or 0.0) < 0.58
+        ):
+            sanitized_scene["descriptors"] = coerce_descriptors_to_empty_room(
+                sanitized_scene["descriptors"],
+                fallback_plan,
+            )
+            sanitized_scene["live_inference_lines"] = build_live_inference_lines(
+                sanitized_scene["descriptors"]
+            )
+            sanitized_scene["prompt_modifiers"] = build_figure_variation_modifiers(
+                sanitized_scene["descriptors"]
+            )
+            sanitized_scene["image_preview"] = build_language_pass_fallback_preview(
+                {"descriptors": sanitized_scene["descriptors"]}
+            )
         descriptors = sanitized_scene["descriptors"]
         prompt_sections = build_prompt_sections(descriptors)
         result = {
@@ -2959,6 +3878,11 @@ def should_generate_new_image(coordinator, now):
     active_seed = None
     prerequisites_met = False
     force_refresh_enabled = not has_active_seed_cycle(coordinator.latest_shared_state)
+    seed_cycle_interval_seconds = get_seed_cycle_interval_seconds(coordinator.latest_shared_state)
+    seed_cycle_elapsed = (
+        seed_cycle_interval_seconds is not None
+        and seconds_since_last_image_generation >= seed_cycle_interval_seconds
+    )
 
     if coordinator.latest_shared_state is None:
         reason = "no shared state yet"
@@ -2966,6 +3890,9 @@ def should_generate_new_image(coordinator, now):
         reason = "generation already in progress"
     elif seconds_since_last_image_generation < IMAGE_GENERATION_INTERVAL_SECONDS:
         reason = "image interval not reached"
+    elif seed_cycle_elapsed:
+        prerequisites_met = True
+        reason = "seed cycle interval elapsed"
     elif seconds_since_meaningful_change < STATE_STABLE_HOLD_SECONDS:
         reason = "state stability hold not reached"
     else:
@@ -2973,6 +3900,15 @@ def should_generate_new_image(coordinator, now):
         seed_cycle = coordinator.latest_shared_state.get("seed_cycle")
         if isinstance(seed_cycle, dict) and isinstance(seed_cycle.get("current_seed"), int):
             active_seed = seed_cycle["current_seed"]
+
+    if prerequisites_met and active_seed is None:
+        seed_cycle = coordinator.latest_shared_state.get("seed_cycle")
+        if isinstance(seed_cycle, dict) and isinstance(seed_cycle.get("current_seed"), int):
+            active_seed = seed_cycle["current_seed"]
+
+    if prerequisites_met and seed_cycle_elapsed:
+        decision = True
+        reason = "seed cycle interval elapsed"
 
     if prerequisites_met and active_seed is not None:
         current_image_seed = coordinator.latest_shared_state.get("current_image_seed")
@@ -3225,7 +4161,14 @@ def process_interpretation_cycle(
 ) -> tuple[list[dict[str, Any]], dict[str, Any], bool]:
     raw_frames = list(frame_buffer)
     smoothed = smooth_frames(raw_frames)
+    previous_shared_state = coordinator.latest_shared_state
     scene_plan = build_scene_plan(smoothed, openai_settings, empty_room_baseline)
+    scene_plan = apply_count_hysteresis(
+        scene_plan,
+        smoothed,
+        previous_shared_state,
+        empty_room_baseline,
+    )
     descriptors = scene_plan["descriptors"]
     live_lines = scene_plan["live_lines"]
     prompt_sections = scene_plan["prompt_sections"]
@@ -3233,7 +4176,6 @@ def process_interpretation_cycle(
     signature = build_state_signature(scene_plan.get("state_signature_descriptors", descriptors))
     change_metrics = extract_change_metrics(smoothed)
 
-    previous_shared_state = coordinator.latest_shared_state
     previous_metrics = None if previous_shared_state is None else previous_shared_state.get("change_metrics")
     previous_signature = coordinator.current_signature
 

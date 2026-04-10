@@ -1,0 +1,63 @@
+{
+  "created_at": "2026-04-08T14:17:23",
+  "seeds": [
+    252,
+    244,
+    264,
+    256
+  ],
+  "prompt": "photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics, preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element, single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same room and camera view, allow the room to remain empty in this no-presence case, preserve the empty installation-space look, discourage background novelty, keep the installation space empty and unoccupied, preserve the same room with no visible person, no occupant, no silhouette, no crowd, treat human figures as the primary changing element, keep the count and placement stable, allow only subtle variation in pose and clothing, preserve full-body readability and clean silhouettes, keep the room broadly stable, same room retained, background structure held, camera view kept similar, occupancy reduced, empty floor emphasis, subtle polished floor reflections, slightly warmer wall light, empty floor emphasis, weak center trace, mid-room depth, room structure unchanged",
+  "descriptor_snapshot": {
+    "presence_activity": "no presence",
+    "presence_count": "no people",
+    "sen0628_spatial_estimate": "SEN0628 suggests only a weak central trace",
+    "sen0628_figure_side": "middle",
+    "presence_location": "center trace only; not human-strong",
+    "lighting_condition": "lighting unavailable",
+    "atmospheric_condition": "neutral indoor air",
+    "spatial_impression": "open, empty, and waiting",
+    "abstract_background": "abstract interior backdrop interpreted from sensor data, minimal ambiguous tonal fields with open depth, soft neutral texture barely present in the background, desaturated tones, muted color, large open areas",
+    "audio_activity": "audio unavailable",
+    "audio_device": null,
+    "audio_relative_db": null,
+    "front_presence": "no presence",
+    "back_presence": "no presence",
+    "front_strength": -10.0,
+    "back_strength": -10.0,
+    "active_ld_zones": [],
+    "dominant_ld_zone": null,
+    "figure_count": 0,
+    "placement_summary": "baseline-like room; weak center trace; no target lock",
+    "placement_prompt": "empty room, preserve layout, no visible people",
+    "depth_band": "mid-room",
+    "primary_zone": "center",
+    "secondary_zone": "left",
+    "active_zones": [
+      "center"
+    ],
+    "layout_mode": "empty",
+    "spatial_certainty": "moderate",
+    "uncertainty_score": 0.22,
+    "sensor_variation_profile": {
+      "fingerprint": "{\"audio_activity\": \"audio unavailable\", \"audio_bucket\": null, \"center_zone_bucket\": 17, \"depth_band\": \"mid-room\", \"distance_bucket\": null, \"far_points_bucket\": 15, \"figure_count\": 0, \"humidity_bucket\": 18, \"layout_mode\": \"empty\", \"left_zone_bucket\": 18, \"mid_points_bucket\": 3, \"moving_bucket\": 0, \"near_points_bucket\": 0, \"presence_activity\": \"no presence\", \"primary_zone\": \"center\", \"right_zone_bucket\": 18, \"stationary_bucket\": 0, \"temperature_bucket\": 36}",
+      "variation_index": 3,
+      "prompt_modifiers": [
+        "subtle polished floor reflections",
+        "slightly warmer wall light"
+      ]
+    },
+    "figure_variation_modifiers": [
+      "same room retained",
+      "background structure held",
+      "camera view kept similar",
+      "occupancy reduced",
+      "empty floor emphasis"
+    ]
+  },
+  "generated_filenames": [
+    "2026-04-08_14-17-00_seed-252_presence-no-people_middle.png",
+    "2026-04-08_14-17-07_seed-244_presence-no-people_middle.png",
+    "2026-04-08_14-17-15_seed-264_presence-no-people_middle.png",
+    "2026-04-08_14-17-23_seed-256_presence-no-people_middle.png"
+  ]
+}

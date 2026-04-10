@@ -10,6 +10,7 @@ from generate_from_pico import (
     SMOOTHING_WINDOW_SIZE,
     build_scene_plan,
     generate_seed_comparison_set,
+    get_seed_cycle_values,
     load_empty_room_baseline,
     smooth_frames,
 )
@@ -17,7 +18,7 @@ from hf_auth import load_hf_token
 from openai_auth import load_openai_settings
 
 
-DEFAULT_SEEDS = [250, 251, 252, 284, 299, 300, 352, 391]
+DEFAULT_SEEDS = get_seed_cycle_values()
 
 FAKE_SENSOR_PRESETS: dict[str, dict[str, Any]] = {
     "empty-room": {
@@ -194,7 +195,7 @@ def parse_args() -> argparse.Namespace:
         nargs="+",
         type=int,
         default=DEFAULT_SEEDS,
-        help="Space-separated list of seeds to compare.",
+        help="Space-separated list of seeds to compare. Defaults to the live image seed cycle.",
     )
     parser.add_argument(
         "--frame-count",

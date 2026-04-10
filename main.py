@@ -40,8 +40,10 @@ SEN_I2C_FREQ = 100_000
 SEN_SENSOR_ADDRESS = 0x33
 SEN_MATRIX_8X8 = 8
 SEN_STARTUP_DELAY_MS = 1500
+SEN_SCAN_RETRY_MS = 10000
 SEN_WARMUP_READS = 2
 SEN_MOUNT_MODE = "ceiling_down"
+SEN_RUNTIME_MODE = "hardware"
 SEN_CEILING_HEIGHT_MM = 2400
 SEN_FLOOR_OCCUPANCY_DELTA_MM = 180
 SEN_FLOOR_NEAR_HEIGHT_MM = 250
@@ -503,6 +505,15 @@ def recover_i2c_bus(sda_pin, scl_pin):
     Pin(scl_pin, Pin.IN, Pin.PULL_UP)
 
 
+def safe_i2c_scan(i2c):
+    if i2c is None:
+        return []
+    try:
+        return i2c.scan()
+    except Exception:
+        return []
+
+
 def scan_for_bme688(i2c):
     devices = i2c.scan()
     for address in BME_ADDRS:
@@ -532,32 +543,47 @@ def init_bme688():
 def init_sen0628():
     recover_i2c_bus(SEN_SDA_PIN, SEN_SCL_PIN)
     time.sleep_ms(SEN_STARTUP_DELAY_MS)
-    i2c = I2C(
-        SEN_I2C_ID,
-        sda=Pin(SEN_SDA_PIN),
-        scl=Pin(SEN_SCL_PIN),
-        freq=SEN_I2C_FREQ,
-    )
-    devices = i2c.scan()
-    if SEN_SENSOR_ADDRESS not in devices:
-        raise OSError("SEN0628 not found")
+    scan_deadline = time.ticks_add(time.ticks_ms(), SEN_SCAN_RETRY_MS)
+    last_error = None
 
-    sensor = SEN0628(i2c, SEN_SENSOR_ADDRESS)
-    sensor.begin()
-    sensor.set_ranging_mode(SEN_MATRIX_8X8)
-    for _ in range(SEN_WARMUP_READS):
-        try:
-            sensor.get_all_data()
-            time.sleep_ms(100)
-        except Exception:
-            pass
-    return sensor
+    while True:
+        i2c = I2C(
+            SEN_I2C_ID,
+            sda=Pin(SEN_SDA_PIN),
+            scl=Pin(SEN_SCL_PIN),
+            freq=SEN_I2C_FREQ,
+        )
+        devices = safe_i2c_scan(i2c)
+        if SEN_SENSOR_ADDRESS in devices:
+            sensor = SEN0628(i2c, SEN_SENSOR_ADDRESS)
+            try:
+                sensor.begin()
+                sensor.set_ranging_mode(SEN_MATRIX_8X8)
+                for _ in range(SEN_WARMUP_READS):
+                    try:
+                        sensor.get_all_data()
+                        time.sleep_ms(100)
+                    except Exception:
+                        pass
+                return sensor
+            except Exception as exc:
+                last_error = exc
+                time.sleep_ms(500)
+        else:
+            last_error = OSError("SEN0628 not found")
+
+        if time.ticks_diff(scan_deadline, time.ticks_ms()) <= 0:
+            raise OSError(str(last_error) if last_error is not None else "SEN0628 not found")
+
+        time.sleep_ms(250)
 
 
 def read_sen0628(sensor):
     values = sensor.get_all_data()
     valid_values = [value for value in values if 0 < value < 4000]
     center_index = (3 * SEN_MATRIX_8X8) + 3
+    center_raw_value = values[center_index]
+    center_value = center_raw_value if 0 < center_raw_value < 4000 else None
     rows = [
         values[row_index * SEN_MATRIX_8X8 : (row_index + 1) * SEN_MATRIX_8X8]
         for row_index in range(SEN_MATRIX_8X8)
@@ -621,7 +647,8 @@ def read_sen0628(sensor):
     return {
         "mount_mode": SEN_MOUNT_MODE,
         "ceiling_height_mm": SEN_CEILING_HEIGHT_MM if SEN_MOUNT_MODE == "ceiling_down" else None,
-        "center_mm": values[center_index],
+        "center_mm": center_value,
+        "center_raw_mm": center_raw_value,
         "min_mm": min_value,
         "max_mm": max_value,
         "mean_mm": safe_round(mean_value),
@@ -686,6 +713,46 @@ def read_sen0628(sensor):
     }
 
 
+def build_fake_sen0628_reading():
+    empty_distance_mm = SEN_CEILING_HEIGHT_MM if SEN_MOUNT_MODE == "ceiling_down" else 3200
+    total_points = SEN_MATRIX_8X8 * SEN_MATRIX_8X8
+    return {
+        "mount_mode": SEN_MOUNT_MODE,
+        "ceiling_height_mm": SEN_CEILING_HEIGHT_MM if SEN_MOUNT_MODE == "ceiling_down" else None,
+        "center_mm": empty_distance_mm,
+        "center_raw_mm": empty_distance_mm,
+        "min_mm": empty_distance_mm,
+        "max_mm": empty_distance_mm,
+        "mean_mm": empty_distance_mm,
+        "valid_points": total_points,
+        "left_zone_mm": empty_distance_mm,
+        "center_zone_mm": empty_distance_mm,
+        "right_zone_mm": empty_distance_mm,
+        "left_close_points": 0,
+        "center_close_points": 0,
+        "right_close_points": 0,
+        "left_occupied_points": 0,
+        "center_occupied_points": 0,
+        "right_occupied_points": 0,
+        "front_zone_mm": empty_distance_mm,
+        "mid_zone_mm": empty_distance_mm,
+        "back_zone_mm": empty_distance_mm,
+        "front_occupied_points": 0,
+        "mid_occupied_points": 0,
+        "back_occupied_points": 0,
+        "near_points": 0,
+        "mid_points": 0,
+        "far_points": total_points,
+        "floor_occupied_points": 0,
+        "floor_clear_points": total_points,
+        "mean_obstruction_height_mm": 0 if SEN_MOUNT_MODE == "ceiling_down" else None,
+        "max_obstruction_height_mm": 0 if SEN_MOUNT_MODE == "ceiling_down" else None,
+        "low_obstruction_points": 0,
+        "mid_obstruction_points": 0,
+        "tall_obstruction_points": 0,
+    }
+
+
 def read_bme688(sensor):
     return sensor.read()
 
@@ -696,13 +763,14 @@ def print_json_packet(packet):
 
 def main():
     print("PICO_READY")
-    config_message = "CONFIG:BME688=I2C{},GP{}/GP{};SEN0628=I2C{},GP{}/GP{}".format(
+    config_message = "CONFIG:BME688=I2C{},GP{}/GP{};SEN0628=I2C{},GP{}/GP{},MODE={}".format(
         BME_I2C_ID,
         BME_SDA_PIN,
         BME_SCL_PIN,
         SEN_I2C_ID,
         SEN_SDA_PIN,
         SEN_SCL_PIN,
+        SEN_RUNTIME_MODE,
     )
     for config in LD_SENSOR_CONFIGS:
         config_message += ";{}=UART{},TX=GP{},RX=GP{},OUT=GP{}".format(
@@ -769,13 +837,18 @@ def main():
         for sensor_name, ld_reader in ld_readers:
             packet[sensor_name] = ld_reader.snapshot()
 
-        if sen_sensor is None:
+        if SEN_RUNTIME_MODE == "fake":
+            packet["sen0628"] = build_fake_sen0628_reading()
+            packet["sen0628_status"] = "fake"
+        elif SEN_RUNTIME_MODE == "disabled":
+            packet["sen0628_status"] = "disabled"
+        elif sen_sensor is None:
             try:
                 sen_sensor = init_sen0628()
                 print("INFO:SEN0628_READY")
             except Exception as exc:
                 packet["sen0628_error"] = str(exc)
-        if sen_sensor is not None:
+        if SEN_RUNTIME_MODE == "hardware" and sen_sensor is not None:
             try:
                 packet["sen0628"] = read_sen0628(sen_sensor)
             except Exception as exc:

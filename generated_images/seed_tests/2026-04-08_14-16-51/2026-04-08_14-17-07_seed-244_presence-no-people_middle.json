@@ -1,0 +1,489 @@
+{
+  "timestamp": "2026-04-08T14:17:07",
+  "seed": 244,
+  "seed_test_mode": true,
+  "final_prompt": "photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics, preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element, single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same room and camera view, allow the room to remain empty in this no-presence case, preserve the empty installation-space look, discourage background novelty, keep the installation space empty and unoccupied, preserve the same room with no visible person, no occupant, no silhouette, no crowd, treat human figures as the primary changing element, keep the count and placement stable, allow only subtle variation in pose and clothing, preserve full-body readability and clean silhouettes, keep the room broadly stable, same room retained, background structure held, camera view kept similar, occupancy reduced, empty floor emphasis, subtle polished floor reflections, slightly warmer wall light, empty floor emphasis, weak center trace, mid-room depth, room structure unchanged",
+  "prompt_sections": {
+    "base_scene_prompt": "photorealistic installation space, gallery-like interior, white cube exhibition room, fixed camera angle, same general room across generations, stable walls and floor layout, open floor, bare walls, minimal architecture, no domestic furniture, no bedroom elements, no home decor, no objects unless required by human presence, clean uncluttered exhibition environment, restrained background detail, believable materials, realistic lens perspective, preserve similar architecture and room geometry, keep the environment broadly consistent while allowing occupancy changes, avoid painterly, graphic, or overtly surreal aesthetics",
+    "background_continuity_directive": "preserve the same general installation room across generations, similar camera angle, similar framing, similar walls, floor, and architectural layout, keep environment structure consistent while allowing occupant revision, background continuity is a secondary anchor and the figures should remain the main changing element",
+    "people_directive": "keep the installation space empty and unoccupied, preserve the same room with no visible person, no occupant, no silhouette, no crowd",
+    "figure_variation_directive": "treat human figures as the primary changing element, keep the count and placement stable, allow only subtle variation in pose and clothing, preserve full-body readability and clean silhouettes, keep the room broadly stable, same room retained, background structure held, camera view kept similar, occupancy reduced, empty floor emphasis, subtle polished floor reflections, slightly warmer wall light",
+    "composition_directive": "single interior scene, cinematic photography, medium-long framing, stable composition, background remains broadly stable and secondary, hold a similar camera position and lens perspective, do not redesign the room or introduce new architecture, human placement should feel estimated rather than overly staged, allow lateral and depth variation in the figures, the room should feel inferred from sensors instead of confidently mapped, keep the same room and camera view, allow the room to remain empty in this no-presence case, preserve the empty installation-space look, discourage background novelty",
+    "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, person, people, human, figure, body, face, silhouette, crowd, alternate room, different room, new architecture, changed camera angle, dramatic set dressing"
+  },
+  "negative_prompt": "text, words, letters, typography, signage, caption, watermark, user interface, collage, diptych, triptych, split panels, storyboard, poster layout, document layout, bed, bedroom, mattress, pillow, blanket, duvet, headboard, nightstand, dresser, wardrobe, sofa, couch, television, domestic furniture, home decor, lampshade, kitchen, office desk, artwork, framed art, black screen, monitor, pedestal, sculpture, person, people, human, figure, body, face, silhouette, crowd, alternate room, different room, new architecture, changed camera angle, dramatic set dressing",
+  "generation_controls": {
+    "uncertainty_score": 0.34,
+    "temperature": 0.42,
+    "top_p": 0.83,
+    "guidance_scale": 7.0,
+    "num_inference_steps": 28
+  },
+  "interpreted_descriptors": {
+    "presence_activity": "no presence",
+    "presence_count": "no people",
+    "sen0628_spatial_estimate": "SEN0628 suggests only a weak central trace",
+    "sen0628_figure_side": "middle",
+    "presence_location": "center trace only; not human-strong",
+    "lighting_condition": "lighting unavailable",
+    "atmospheric_condition": "neutral indoor air",
+    "spatial_impression": "open, empty, and waiting",
+    "abstract_background": "abstract interior backdrop interpreted from sensor data, minimal ambiguous tonal fields with open depth, soft neutral texture barely present in the background, desaturated tones, muted color, large open areas",
+    "audio_activity": "audio unavailable",
+    "audio_device": null,
+    "audio_relative_db": null,
+    "front_presence": "no presence",
+    "back_presence": "no presence",
+    "front_strength": -10.0,
+    "back_strength": -10.0,
+    "active_ld_zones": [],
+    "dominant_ld_zone": null,
+    "figure_count": 0,
+    "placement_summary": "baseline-like room; weak center trace; no target lock",
+    "placement_prompt": "empty room, preserve layout, no visible people",
+    "depth_band": "mid-room",
+    "primary_zone": "center",
+    "secondary_zone": "left",
+    "active_zones": [
+      "center"
+    ],
+    "layout_mode": "empty",
+    "spatial_certainty": "moderate",
+    "uncertainty_score": 0.22,
+    "sensor_variation_profile": {
+      "fingerprint": "{\"audio_activity\": \"audio unavailable\", \"audio_bucket\": null, \"center_zone_bucket\": 17, \"depth_band\": \"mid-room\", \"distance_bucket\": null, \"far_points_bucket\": 15, \"figure_count\": 0, \"humidity_bucket\": 18, \"layout_mode\": \"empty\", \"left_zone_bucket\": 18, \"mid_points_bucket\": 3, \"moving_bucket\": 0, \"near_points_bucket\": 0, \"presence_activity\": \"no presence\", \"primary_zone\": \"center\", \"right_zone_bucket\": 18, \"stationary_bucket\": 0, \"temperature_bucket\": 36}",
+      "variation_index": 3,
+      "prompt_modifiers": [
+        "subtle polished floor reflections",
+        "slightly warmer wall light"
+      ]
+    },
+    "figure_variation_modifiers": [
+      "same room retained",
+      "background structure held",
+      "camera view kept similar",
+      "occupancy reduced",
+      "empty floor emphasis"
+    ]
+  },
+  "smoothed_sensor_values": {
+    "frame_count": 6,
+    "seq_range": [
+      0,
+      5
+    ],
+    "uptime_ms": 1250,
+    "bme688": {
+      "temperature_c": 21.400000000000002,
+      "raw_temperature_c": 22.0,
+      "humidity_pct": 46.0,
+      "pressure_hpa": 1012.4,
+      "gas_ohms": 18500.0
+    },
+    "ld2410c_front": {
+      "out": 0,
+      "target_state": "NO_TARGET",
+      "target_state_raw": 0,
+      "moving_distance_cm": null,
+      "moving_energy": 0.0,
+      "stationary_distance_cm": null,
+      "stationary_energy": 0.0,
+      "detection_distance_cm": null,
+      "status": "OK",
+      "state_history": [
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET"
+      ]
+    },
+    "ld2410c_back": {
+      "out": 0,
+      "target_state": "NO_TARGET",
+      "target_state_raw": 0,
+      "moving_distance_cm": null,
+      "moving_energy": 0.0,
+      "stationary_distance_cm": null,
+      "stationary_energy": 0.0,
+      "detection_distance_cm": null,
+      "status": "OK",
+      "state_history": [
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET"
+      ]
+    },
+    "ld2410c": {
+      "out": 0,
+      "target_state": "NO_TARGET",
+      "target_state_raw": 0,
+      "moving_distance_cm": null,
+      "moving_energy": 0.0,
+      "stationary_distance_cm": null,
+      "stationary_energy": 0.0,
+      "detection_distance_cm": null,
+      "status": "OK",
+      "state_history": [
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET",
+        "NO_TARGET"
+      ]
+    },
+    "sen0628": {
+      "mount_mode": null,
+      "ceiling_height_mm": null,
+      "center_mm": 2349.6666666666665,
+      "center_raw_mm": null,
+      "min_mm": 2100.0,
+      "max_mm": 3100.0,
+      "mean_mm": 2479.6666666666665,
+      "valid_points": 18.0,
+      "left_zone_mm": 2550.0,
+      "center_zone_mm": 2380.0,
+      "right_zone_mm": 2510.0,
+      "left_close_points": 0.0,
+      "center_close_points": 1.0,
+      "right_close_points": 0.0,
+      "left_occupied_points": null,
+      "center_occupied_points": null,
+      "right_occupied_points": null,
+      "front_zone_mm": null,
+      "mid_zone_mm": null,
+      "back_zone_mm": null,
+      "front_occupied_points": null,
+      "mid_occupied_points": null,
+      "back_occupied_points": null,
+      "near_points": 0.0,
+      "mid_points": 3.0,
+      "far_points": 15.0,
+      "floor_occupied_points": null,
+      "floor_clear_points": null,
+      "mean_obstruction_height_mm": null,
+      "max_obstruction_height_mm": null,
+      "low_obstruction_points": null,
+      "mid_obstruction_points": null,
+      "tall_obstruction_points": null
+    },
+    "usb_microphone": null,
+    "errors": {
+      "bme688_error": null,
+      "sen0628_error": null
+    }
+  },
+  "raw_sensor_frames": [
+    {
+      "type": "sensor_frame",
+      "seq": 0,
+      "uptime_ms": 0,
+      "bme688": {
+        "temperature_c": 21.35,
+        "raw_temperature_c": 21.95,
+        "humidity_pct": 45.5,
+        "pressure_hpa": 1012.4,
+        "gas_ohms": 18500.0
+      },
+      "ld2410c_front": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "ld2410c_back": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "sen0628": {
+        "center_mm": 2348,
+        "min_mm": 2100,
+        "max_mm": 3100,
+        "mean_mm": 2478,
+        "valid_points": 18,
+        "left_zone_mm": 2549,
+        "center_zone_mm": 2379,
+        "right_zone_mm": 2509,
+        "left_close_points": 0,
+        "center_close_points": 1,
+        "right_close_points": 0,
+        "near_points": 0,
+        "mid_points": 3,
+        "far_points": 15
+      }
+    },
+    {
+      "type": "sensor_frame",
+      "seq": 1,
+      "uptime_ms": 250,
+      "bme688": {
+        "temperature_c": 21.45,
+        "raw_temperature_c": 22.05,
+        "humidity_pct": 46.0,
+        "pressure_hpa": 1012.4,
+        "gas_ohms": 18500.0
+      },
+      "ld2410c_front": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "ld2410c_back": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "sen0628": {
+        "center_mm": 2349,
+        "min_mm": 2100,
+        "max_mm": 3100,
+        "mean_mm": 2479,
+        "valid_points": 18,
+        "left_zone_mm": 2550,
+        "center_zone_mm": 2380,
+        "right_zone_mm": 2510,
+        "left_close_points": 0,
+        "center_close_points": 1,
+        "right_close_points": 0,
+        "near_points": 0,
+        "mid_points": 3,
+        "far_points": 15
+      }
+    },
+    {
+      "type": "sensor_frame",
+      "seq": 2,
+      "uptime_ms": 500,
+      "bme688": {
+        "temperature_c": 21.35,
+        "raw_temperature_c": 21.95,
+        "humidity_pct": 46.5,
+        "pressure_hpa": 1012.4,
+        "gas_ohms": 18500.0
+      },
+      "ld2410c_front": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "ld2410c_back": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "sen0628": {
+        "center_mm": 2350,
+        "min_mm": 2100,
+        "max_mm": 3100,
+        "mean_mm": 2480,
+        "valid_points": 18,
+        "left_zone_mm": 2551,
+        "center_zone_mm": 2381,
+        "right_zone_mm": 2511,
+        "left_close_points": 0,
+        "center_close_points": 1,
+        "right_close_points": 0,
+        "near_points": 0,
+        "mid_points": 3,
+        "far_points": 15
+      }
+    },
+    {
+      "type": "sensor_frame",
+      "seq": 3,
+      "uptime_ms": 750,
+      "bme688": {
+        "temperature_c": 21.45,
+        "raw_temperature_c": 22.05,
+        "humidity_pct": 45.5,
+        "pressure_hpa": 1012.4,
+        "gas_ohms": 18500.0
+      },
+      "ld2410c_front": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "ld2410c_back": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "sen0628": {
+        "center_mm": 2351,
+        "min_mm": 2100,
+        "max_mm": 3100,
+        "mean_mm": 2481,
+        "valid_points": 18,
+        "left_zone_mm": 2549,
+        "center_zone_mm": 2379,
+        "right_zone_mm": 2509,
+        "left_close_points": 0,
+        "center_close_points": 1,
+        "right_close_points": 0,
+        "near_points": 0,
+        "mid_points": 3,
+        "far_points": 15
+      }
+    },
+    {
+      "type": "sensor_frame",
+      "seq": 4,
+      "uptime_ms": 1000,
+      "bme688": {
+        "temperature_c": 21.35,
+        "raw_temperature_c": 21.95,
+        "humidity_pct": 46.0,
+        "pressure_hpa": 1012.4,
+        "gas_ohms": 18500.0
+      },
+      "ld2410c_front": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "ld2410c_back": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "sen0628": {
+        "center_mm": 2352,
+        "min_mm": 2100,
+        "max_mm": 3100,
+        "mean_mm": 2482,
+        "valid_points": 18,
+        "left_zone_mm": 2550,
+        "center_zone_mm": 2380,
+        "right_zone_mm": 2510,
+        "left_close_points": 0,
+        "center_close_points": 1,
+        "right_close_points": 0,
+        "near_points": 0,
+        "mid_points": 3,
+        "far_points": 15
+      }
+    },
+    {
+      "type": "sensor_frame",
+      "seq": 5,
+      "uptime_ms": 1250,
+      "bme688": {
+        "temperature_c": 21.45,
+        "raw_temperature_c": 22.05,
+        "humidity_pct": 46.5,
+        "pressure_hpa": 1012.4,
+        "gas_ohms": 18500.0
+      },
+      "ld2410c_front": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "ld2410c_back": {
+        "out": 0,
+        "target_state": "NO_TARGET",
+        "target_state_raw": 0,
+        "moving_distance_cm": null,
+        "moving_energy": 0,
+        "stationary_distance_cm": null,
+        "stationary_energy": 0,
+        "detection_distance_cm": null,
+        "status": "OK"
+      },
+      "sen0628": {
+        "center_mm": 2348,
+        "min_mm": 2100,
+        "max_mm": 3100,
+        "mean_mm": 2478,
+        "valid_points": 18,
+        "left_zone_mm": 2551,
+        "center_zone_mm": 2381,
+        "right_zone_mm": 2511,
+        "left_close_points": 0,
+        "center_close_points": 1,
+        "right_close_points": 0,
+        "near_points": 0,
+        "mid_points": 3,
+        "far_points": 15
+      }
+    }
+  ]
+}

@@ -1,6 +1,57 @@
 from machine import I2C, Pin
 import time
 
+
+_time_sleep_ms = getattr(time, "sleep_ms", None)
+
+
+def sleep_ms(milliseconds):
+    if _time_sleep_ms is not None:
+        _time_sleep_ms(milliseconds)
+    else:
+        time.sleep(milliseconds / 1000)
+
+
+_time_sleep_us = getattr(time, "sleep_us", None)
+
+
+def sleep_us(microseconds):
+    if _time_sleep_us is not None:
+        _time_sleep_us(microseconds)
+    else:
+        time.sleep(microseconds / 1_000_000)
+
+
+_time_ticks_ms = getattr(time, "ticks_ms", None)
+
+
+def ticks_ms():
+    if _time_ticks_ms is not None:
+        return _time_ticks_ms()
+    else:
+        return int(time.monotonic() * 1000)
+
+
+_time_ticks_add = getattr(time, "ticks_add", None)
+
+
+def ticks_add(ticks, delta):
+    if _time_ticks_add is not None:
+        return _time_ticks_add(ticks, delta)
+    else:
+        return ticks + delta
+
+
+_time_ticks_diff = getattr(time, "ticks_diff", None)
+
+
+def ticks_diff(ticks1, ticks2):
+    if _time_ticks_diff is not None:
+        return _time_ticks_diff(ticks1, ticks2)
+    else:
+        return ticks1 - ticks2
+
+
 I2C_ID = 1
 SDA_PIN = 6
 SCL_PIN = 7
@@ -42,6 +93,12 @@ def format_row(row_values):
 
 def valid_readings(values):
     return [value for value in values if 0 < value < 4000]
+
+
+def valid_distance_mm(value):
+    if 0 < value < 4000:
+        return value
+    return None
 
 
 def average_distance_mm(readings):
@@ -174,17 +231,17 @@ def recover_i2c_bus():
 
     for _ in range(9):
         scl.value(0)
-        time.sleep_us(10)
+        sleep_us(10)
         scl.value(1)
-        time.sleep_us(10)
+        sleep_us(10)
 
     # Attempt a stop condition with SDA rising while SCL is high.
     sda = Pin(SDA_PIN, Pin.OPEN_DRAIN, value=0)
-    time.sleep_us(10)
+    sleep_us(10)
     scl.value(1)
-    time.sleep_us(10)
+    sleep_us(10)
     sda.value(1)
-    time.sleep_us(10)
+    sleep_us(10)
 
     Pin(SDA_PIN, Pin.IN, Pin.PULL_UP)
     Pin(SCL_PIN, Pin.IN, Pin.PULL_UP)
@@ -210,17 +267,17 @@ class SEN0628:
         return self.i2c.readfrom(self.address, length)
 
     def _read_response(self, expected_cmd, timeout_ms=RESPONSE_TIMEOUT_MS):
-        deadline = time.ticks_add(time.ticks_ms(), timeout_ms)
+        deadline = ticks_add(ticks_ms(), timeout_ms)
 
-        while time.ticks_diff(deadline, time.ticks_ms()) > 0:
+        while ticks_diff(deadline, ticks_ms()) > 0:
             status = self._read_exact(1)[0]
 
             if status == 0xFF:
-                time.sleep_ms(20)
+                sleep_ms(20)
                 continue
 
             if status not in (STATUS_SUCCESS, STATUS_FAILED):
-                time.sleep_ms(20)
+                sleep_ms(20)
                 continue
 
             cmd = self._read_exact(1)[0]
@@ -247,7 +304,7 @@ class SEN0628:
     def set_ranging_mode(self, matrix_size):
         self._write_packet(CMD_SETMODE, bytes((0, 0, 0, matrix_size)))
         self._read_response(CMD_SETMODE)
-        time.sleep_ms(MODE_SWITCH_DELAY_MS)
+        sleep_ms(MODE_SWITCH_DELAY_MS)
 
     def get_all_data(self):
         self._write_packet(CMD_ALLDATA)
@@ -272,6 +329,11 @@ def main():
     print("SEN0628:I2C_FREQ={}".format(I2C_FREQ))
     print("SEN0628:STARTUP_DELAY_MS={}".format(STARTUP_DELAY_MS))
     print("SEN0628:MOUNT_MODE={}".format(MOUNT_MODE))
+    print(
+        "SEN0628:WIRING_HINT=VCC=3V3,GND=GND,SDA=GP{},SCL=GP{},ADDR={}".format(
+            SDA_PIN, SCL_PIN, hex(SENSOR_ADDRESS)
+        )
+    )
     if MOUNT_MODE == "ceiling_down":
         print("SEN0628:CEILING_HEIGHT_MM={}".format(CEILING_HEIGHT_MM))
         print("SEN0628:FLOOR_OCCUPANCY_DELTA_MM={}".format(FLOOR_OCCUPANCY_DELTA_MM))
@@ -284,8 +346,8 @@ def main():
             if sensor is None:
                 print("SEN0628:RECOVERING_I2C_BUS")
                 recover_i2c_bus()
-                time.sleep_ms(STARTUP_DELAY_MS)
-                scan_deadline = time.ticks_add(time.ticks_ms(), SCAN_RETRY_MS)
+                sleep_ms(STARTUP_DELAY_MS)
+                scan_deadline = ticks_add(ticks_ms(), SCAN_RETRY_MS)
 
                 while True:
                     i2c = I2C(I2C_ID, sda=Pin(SDA_PIN), scl=Pin(SCL_PIN), freq=I2C_FREQ)
@@ -308,26 +370,37 @@ def main():
                                     [hex(device) for device in devices_after_failure]
                                 )
                             )
+                            if SENSOR_ADDRESS in devices_after_failure:
+                                print(
+                                    "SEN0628:DIAG=DEVICE_ACKS_I2C_BUT_INIT_FAILED,CHECK_POWERUP_DELAY_AND_COMMAND_TIMING"
+                                )
+                            else:
+                                print(
+                                    "SEN0628:DIAG=DEVICE_DROPPED_OFF_BUS_DURING_INIT,CHECK_POWER_AND_WIRING"
+                                )
                             sensor = None
-                            time.sleep_ms(500)
+                            sleep_ms(500)
                             continue
                         for _ in range(WARMUP_READS):
                             try:
+                                assert sensor is not None
                                 sensor.get_all_data()
-                                time.sleep_ms(100)
+                                sleep_ms(100)
                             except Exception:
                                 pass
                         break
 
-                    if time.ticks_diff(scan_deadline, time.ticks_ms()) <= 0:
+                    if ticks_diff(scan_deadline, ticks_ms()) <= 0:
                         print("SEN0628:NOT_FOUND")
                         time.sleep(REPORT_DELAY_S)
-                        scan_deadline = time.ticks_add(time.ticks_ms(), SCAN_RETRY_MS)
+                        scan_deadline = ticks_add(ticks_ms(), SCAN_RETRY_MS)
 
-                    time.sleep_ms(500)
+                    sleep_ms(500)
 
+            assert sensor is not None
             values = sensor.get_all_data()
-            center = values[(3 * MATRIX_8X8) + 3]
+            center_raw = values[(3 * MATRIX_8X8) + 3]
+            center = valid_distance_mm(center_raw)
             valid_values = valid_readings(values)
             min_value = min(valid_values) if valid_values else None
             max_value = max(valid_values) if valid_values else None
@@ -336,13 +409,16 @@ def main():
             floor_summary = build_floor_summary(values)
 
             print(
-                "SEN0628:CENTER_MM={},MIN_MM={},MAX_MM={},VALID_POINTS={}/64".format(
-                    center,
+                "SEN0628:CENTER_MM={},CENTER_RAW_MM={},MIN_MM={},MAX_MM={},VALID_POINTS={}/64".format(
+                    center if center is not None else "NONE",
+                    center_raw,
                     min_value if min_value is not None else "NONE",
                     max_value if max_value is not None else "NONE",
                     valid_count,
                 )
             )
+            if center is None:
+                print("SEN0628:DIAG=CENTER_PIXEL_INVALID,USING_OTHER_VALID_POINTS_FOR_SCENE_SUMMARY")
             print(
                 "SEN0628:INTERPRETATION=Nearest object is {} ({})".format(
                     nearest_text,
